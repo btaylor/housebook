@@ -8,7 +8,10 @@ interface TestMigration {
 	sql: string;
 }
 
-export async function createHousebookHarness(migrations: TestMigration[] = []) {
+export async function createHousebookHarness(
+	migrations: TestMigration[] = [],
+	{ autoStart = true } = {}
+) {
 	const directory = mkdtempSync(join(tmpdir(), 'housebook-'));
 	const dataDirectory = join(directory, 'data');
 	const migrationsDirectory = join(directory, 'migrations');
@@ -40,7 +43,7 @@ export async function createHousebookHarness(migrations: TestMigration[] = []) {
 	for (const migration of migrations) addMigration(migration);
 
 	try {
-		await start();
+		if (autoStart) await start();
 	} catch (error) {
 		rmSync(directory, { recursive: true, force: true });
 		throw error;
