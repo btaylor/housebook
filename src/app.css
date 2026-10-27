@@ -47,7 +47,8 @@ a {
 }
 button,
 input,
-select {
+select,
+textarea {
 	font: inherit;
 }
 button,
@@ -166,7 +167,8 @@ fieldset label:first-of-type {
 	margin-top: 0;
 }
 input,
-select {
+select,
+textarea {
 	display: block;
 	width: 100%;
 	min-height: 3rem;
@@ -329,6 +331,112 @@ input::placeholder {
 	overflow-wrap: anywhere;
 }
 .member-details > p {
+	font-size: 0.85rem;
+}
+.contractor-heading {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 1.25rem;
+	flex-wrap: wrap;
+	overflow-wrap: anywhere;
+}
+.contractor-heading > div {
+	min-width: 0;
+}
+.contractor-heading a.secondary {
+	display: inline-flex;
+	align-items: center;
+	text-decoration: none;
+	flex-shrink: 0;
+}
+.back-link {
+	display: inline-block;
+	margin-bottom: 1.5rem;
+	color: var(--muted);
+	overflow-wrap: anywhere;
+}
+.archive-filter {
+	margin-top: 1.75rem;
+}
+.archive-filter label {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+	min-height: 3rem;
+	width: fit-content;
+}
+.archive-filter input {
+	width: 1.25rem;
+	height: 1.25rem;
+	min-height: 0;
+	accent-color: var(--accent);
+}
+.contractor-list {
+	list-style: none;
+	padding: 0;
+	display: grid;
+	gap: 0.85rem;
+}
+.contractor-list a {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	text-decoration: none;
+	border: 1px solid var(--line);
+	background: var(--surface);
+	padding: 1.25rem;
+	border-radius: 0.8rem;
+	overflow-wrap: anywhere;
+}
+.contractor-list a > div {
+	min-width: 0;
+}
+.contractor-list p {
+	color: var(--muted);
+	font-size: 0.9rem;
+	margin-top: 0.25rem;
+}
+.contractor-form,
+.contractor-details {
+	margin-top: 2rem;
+	max-width: 38rem;
+	padding: 1.5rem;
+	border: 1px solid var(--line);
+	border-radius: 1rem;
+	background: var(--surface);
+}
+.contractor-form textarea {
+	resize: vertical;
+}
+.contractor-details dl {
+	margin: 0;
+}
+.contractor-details dt {
+	color: var(--muted);
+	font-size: 0.8rem;
+	margin-bottom: 0.35rem;
+}
+.contractor-details dd {
+	margin: 0 0 1.5rem;
+	overflow-wrap: anywhere;
+}
+.contractor-notes {
+	white-space: pre-wrap;
+}
+.contractor-details form {
+	border-top: 1px solid var(--line);
+	padding-top: 1rem;
+}
+.contractor-details button {
+	margin-top: 1rem;
+}
+.archived-notice {
+	padding: 0.8rem;
+	margin-bottom: 1.5rem;
+	border-radius: 0.5rem;
+	background: var(--accent-soft);
 	font-size: 0.85rem;
 }
 

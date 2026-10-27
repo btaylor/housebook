@@ -26,7 +26,10 @@
 		{#each tabs as tab (tab.path)}
 			<a
 				href={resolve(`/(app)/${tab.path}`)}
-				aria-current={page.url.pathname === `/${tab.path}` ? 'page' : undefined}
+				aria-current={page.url.pathname === `/${tab.path}` ||
+				page.url.pathname.startsWith(`/${tab.path}/`)
+					? 'page'
+					: undefined}
 			>
 				<Icon name={tab.path} />
 				<span>{tab.label}</span>
