@@ -34,16 +34,21 @@ describe('Housebook construction', () => {
 		expect(harness.core.clock().toISOString()).toBe('2026-02-03T04:05:06.000Z');
 	});
 
-	test('applies the baseline on first start without domain tables or an unnecessary backup', async () => {
+	test('applies all packaged migrations on first start without an unnecessary backup', async () => {
 		const harness = await createHarness();
 		expect(
 			harness.core.database.all(
 				sql`SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name`
 			)
-		).toEqual([{ name: '__drizzle_migrations' }]);
+		).toEqual([
+			{ name: '__drizzle_migrations' },
+			{ name: 'houses' },
+			{ name: 'members' },
+			{ name: 'sessions' }
+		]);
 		expect(
 			harness.core.database.get(sql`SELECT count(*) AS count FROM "__drizzle_migrations"`)
-		).toEqual({ count: 1 });
+		).toEqual({ count: 2 });
 		expect(backups(harness)).toEqual([]);
 		await harness.start();
 		expect(backups(harness)).toEqual([]);
@@ -82,7 +87,7 @@ describe('startup migrations', () => {
 				]);
 				expect(
 					snapshot.prepare('SELECT count(*) AS count FROM "__drizzle_migrations"').get()
-				).toEqual({ count: 2 });
+				).toEqual({ count: 3 });
 				expect(snapshot.prepare('PRAGMA integrity_check').get()).toEqual({ integrity_check: 'ok' });
 			} finally {
 				snapshot.close();
@@ -149,7 +154,7 @@ describe('startup migrations', () => {
 			expect(
 				database.prepare('SELECT count(*) AS count FROM "__drizzle_migrations"').get()
 			).toEqual({
-				count: 1
+				count: 2
 			});
 		} finally {
 			database.close();
