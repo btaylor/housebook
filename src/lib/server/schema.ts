@@ -33,3 +33,13 @@ export const sessions = sqliteTable('sessions', {
 	lastSeenAt: integer({ mode: 'timestamp_ms' }).notNull(),
 	expiresAt: integer({ mode: 'timestamp_ms' }).notNull()
 });
+
+export const contractors = sqliteTable('contractors', {
+	id: text().primaryKey(),
+	name: text().notNull(),
+	phone: text().notNull().default(''),
+	email: text().notNull().default(''),
+	trade: text().notNull().default(''),
+	notes: text().notNull().default(''),
+	archivedAt: integer({ mode: 'timestamp_ms' })
+});
