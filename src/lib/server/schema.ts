@@ -1,6 +1,22 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
+import { itemCategories } from '../items';
+
+export const items = sqliteTable('items', {
+	id: text().primaryKey(),
+	name: text().notNull(),
+	category: text({ enum: itemCategories }).notNull(),
+	location: text(),
+	make: text(),
+	model: text(),
+	serialNumber: text(),
+	installDate: text(),
+	warrantyEndDate: text(),
+	notes: text(),
+	retiredDate: text()
+});
+
 export const houses = sqliteTable(
 	'houses',
 	{
