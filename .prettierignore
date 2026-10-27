@@ -1,0 +1,14 @@
+package-lock.json
+.svelte-kit/
+build/
+node_modules/
+playwright-report/
+test-results/
+coverage/
+.data/
+drizzle/
+AGENTS.md
+CLAUDE.md
+GLOSSARY.md
+docs/agents/
+docs/adr/
