@@ -3,15 +3,19 @@
 A self-hosted, shared record of one House. This project skeleton serves a placeholder page.
 Setup, sign-in, and domain operations are not implemented yet.
 
-## Run with Docker Compose
+## Install
 
-Clone this repository. The included `docker-compose.yml` builds one local image:
+Housebook images are published at `ghcr.io/btaylor/housebook` for amd64 and arm64.
+Docker selects the image for your hardware. Releases provide `X.Y.Z`, `X.Y`, `X`, and `latest`
+tags; for example, release `v1.2.3` publishes `1.2.3`, `1.2`, `1`, and `latest`.
+Use `latest` for the newest release or pin a specific version for controlled upgrades.
+
+Save this Compose example as `docker-compose.yml` (also included in this repository):
 
 ```yaml
 services:
   housebook:
-    build: .
-    image: housebook:local
+    image: ghcr.io/btaylor/housebook:latest
     ports:
       - '3000:3000'
     volumes:
@@ -24,22 +28,50 @@ The container runs as UID/GID 1000. On Linux, give that identity access to the b
 ```sh
 mkdir -p data
 sudo chown 1000:1000 data
-docker compose up --build -d
+docker compose pull
+docker compose up -d
 ```
 
-Open <http://localhost:3000>. The image supports amd64 and arm64. There are no other
+Open <http://localhost:3000>. There are no other
 containers, services, telemetry, update checks, or external fonts/scripts. Runtime works offline;
 building the image and installing development tools require network access.
-Image publishing is not part of this skeleton.
 
 To run without Compose:
 
 ```sh
-docker build -t housebook:local .
-docker run --rm -p 3000:3000 --mount type=bind,src="$(pwd)/data",dst=/data housebook:local
+docker run -d --name housebook --restart unless-stopped -p 3000:3000 \
+  --mount type=bind,src="$(pwd)/data",dst=/data ghcr.io/btaylor/housebook:latest
 ```
 
-### Persistent data and upgrades
+## Upgrade
+
+Back up `/data` before upgrading. For a pinned version, change the image tag in
+`docker-compose.yml` to the newer version first, then pull and recreate the container:
+
+```sh
+docker compose pull
+docker compose up -d
+```
+
+For a `docker run` installation, pull the newer tag, stop and remove the old container,
+and repeat the install command with that tag and the **same `/data` mount**:
+
+```sh
+docker pull ghcr.io/btaylor/housebook:latest
+docker stop housebook
+docker rm housebook
+```
+
+Startup applies packaged Drizzle migrations before the server listens.
+Before applying pending migrations to an existing database, it writes a consistent
+`housebook.pre-migration-<UTC timestamp>-<unique id>.sqlite` backup under `/data`.
+This includes committed SQLite WAL contents.
+An unknown or changed migration stops startup with a downgrade error before database writes.
+Downgrades past an applied migration are not supported. Use the matching or a newer image;
+do not remove migration history to force a downgrade.
+Run only one Housebook process against a data directory.
+
+## Backups
 
 Back up the **entire `data/` directory** mounted at `/data`: it holds `housebook.sqlite`,
 SQLite sidecar files, migration backups, and future Document files.
@@ -51,15 +83,10 @@ cp -a data "data-backup-$(date +%Y%m%d-%H%M%S)"
 docker compose start
 ```
 
-Startup applies packaged Drizzle migrations before the server listens.
-On first start, it creates the database and migration history without domain tables.
-Before applying pending migrations to an existing database, it writes a consistent
-`housebook.pre-migration-<UTC timestamp>-<unique id>.sqlite` backup under `/data`.
-This includes committed SQLite WAL contents. Migration backups cover the database only;
-they do not replace backups of the entire directory.
-An unknown or changed migration stops startup with a downgrade error before database writes.
-Use the matching or a newer image; do not remove migration history to force a downgrade.
-Run only one Housebook process against a data directory.
+For a `docker run` installation, use `docker stop housebook` and `docker start housebook`
+around the same copy command. Keep backups outside the mounted directory.
+Automatic pre-migration backups cover the database only; they do not replace backups of
+the entire `/data` directory.
 
 ## Develop
 
