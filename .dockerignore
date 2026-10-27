@@ -1,0 +1,14 @@
+.git
+.github
+node_modules
+.svelte-kit
+build
+.data
+data
+data-backup-*
+.playwright-cli
+.env
+.env.*
+coverage
+playwright-report
+test-results
