@@ -1,7 +1,6 @@
 services:
   housebook:
-    build: .
-    image: housebook:local
+    image: ghcr.io/btaylor/housebook:latest
     ports:
       - '3000:3000'
     volumes:
