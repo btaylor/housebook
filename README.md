@@ -1,8 +1,8 @@
 # Housebook
 
 A self-hosted, shared record of one House. Create your House, sign in, and move between
-Items, Maintenance Log, Contractors, and Settings. Keep Contractor contact details and Archive
-those you no longer use. Item and Maintenance Log record-management screens are placeholders.
+Items, Maintenance Log, Contractors, and Settings. Add, find, and edit Items. Keep Contractor
+contact details and Archive those you no longer use. Maintenance Log records are placeholders.
 
 ## Install
 
@@ -66,6 +66,14 @@ exposed installation. Direct HTTP ignores client-supplied transport headers.
 The cookie is HTTP-only, SameSite=Lax, and Secure only when the incoming scheme is HTTPS.
 SvelteKit checks the request origin for form submissions; this check remains enabled.
 The optional `HOUSEBOOK_URL` for future Invite/reset links is not used by sign-in.
+
+## Items
+
+Add an Item with a name and category. Location, make, model, serial number, install date,
+warranty end date, and notes are optional. Search by name and filter by category on the Items tab.
+Dates stay as calendar dates, without times or time zones. Warranty status uses the core clock's
+UTC calendar day: it stays active through the end date and ends the next day.
+An Item without a warranty end date shows “No warranty end date recorded,” not an active warranty.
 
 ## Upgrade
 
