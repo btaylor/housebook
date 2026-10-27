@@ -9,7 +9,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"start": "node build",
+		"start": "node server.js",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -17,7 +17,7 @@
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"test": "vitest run",
-		"test:e2e": "playwright test",
+		"test:e2e": "npm run build && playwright test",
 		"db:generate": "drizzle-kit generate"
 	},
 	"dependencies": {

@@ -1,9 +1,10 @@
-import type { Housebook } from './lib/server/core/index';
+import type { Housebook, Member } from './lib/server/core/index';
 
 declare global {
 	namespace App {
 		interface Locals {
 			housebook: Housebook;
+			member: Member | null;
 		}
 	}
 }

@@ -61,7 +61,7 @@ export class Housebook {
 		readonly clock: () => Date
 	) {
 		this.auth = new Auth(database, clock);
-		this.setup = new Setup(database, clock, this.auth);
+		this.setup = new Setup(database, clock);
 	}
 }
 
@@ -70,8 +70,7 @@ class Setup {
 
 	constructor(
 		private database: NodeSQLiteDatabase,
-		private clock: () => Date,
-		private auth: Auth
+		private clock: () => Date
 	) {}
 
 	getHouse() {
@@ -113,7 +112,7 @@ class Setup {
 				.insert(members)
 				.values({ ...member, passwordHash, createdAt: now })
 				.run();
-			return this.auth.createSession(member);
+			return createSession(this.database, this.clock, member);
 		});
 		this.#code = undefined;
 		return session;
@@ -147,24 +146,11 @@ class Auth {
 		if (!(await verifyPassword(password, member?.passwordHash)) || !member) {
 			throw new DomainError('invalid-credentials', 'Email or password is incorrect.');
 		}
-		return this.createSession({ id: member.id, name: member.name, email: member.email });
-	}
-
-	createSession(member: Member): Session {
-		const token = randomBytes(32).toString('base64url');
-		const now = this.clock();
-		const expiresAt = new Date(now.getTime() + sessionLifetime);
-		this.database
-			.insert(sessions)
-			.values({
-				tokenHash: tokenHash(token),
-				memberId: member.id,
-				createdAt: now,
-				lastSeenAt: now,
-				expiresAt
-			})
-			.run();
-		return { token, expiresAt, member };
+		return createSession(this.database, this.clock, {
+			id: member.id,
+			name: member.name,
+			email: member.email
+		});
 	}
 
 	validateSession(token: string): Session | null {
@@ -196,4 +182,21 @@ class Auth {
 			.where(eq(sessions.tokenHash, tokenHash(token)))
 			.run();
 	}
+}
+
+function createSession(database: NodeSQLiteDatabase, clock: () => Date, member: Member): Session {
+	const token = randomBytes(32).toString('base64url');
+	const now = clock();
+	const expiresAt = new Date(now.getTime() + sessionLifetime);
+	database
+		.insert(sessions)
+		.values({
+			tokenHash: tokenHash(token),
+			memberId: member.id,
+			createdAt: now,
+			lastSeenAt: now,
+			expiresAt
+		})
+		.run();
+	return { token, expiresAt, member };
 }

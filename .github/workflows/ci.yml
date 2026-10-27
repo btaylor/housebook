@@ -48,9 +48,9 @@ jobs:
             --network none --mount type=volume,src=housebook-data,dst=/data housebook:test
           for attempt in $(seq 1 30); do
             if docker exec housebook node --input-type=module -e \
-              'const r = await fetch("http://127.0.0.1:3000"); if (!r.ok || !(await r.text()).includes("Housebook is running.")) process.exit(1)'; then
+              'const r = await fetch("http://127.0.0.1:3000"); if (!r.ok || !(await r.text()).includes("Every House has a story.")) process.exit(1)'; then
               docker exec housebook node --input-type=module -e \
-                'import { DatabaseSync } from "node:sqlite"; const db = new DatabaseSync("/data/housebook.sqlite", {readOnly:true}); if (db.prepare("SELECT count(*) AS count FROM __drizzle_migrations").get().count !== 1) process.exit(1); db.close()'
+                'import { DatabaseSync } from "node:sqlite"; const db = new DatabaseSync("/data/housebook.sqlite", {readOnly:true}); if (db.prepare("SELECT count(*) AS count FROM __drizzle_migrations").get().count !== 2) process.exit(1); db.close()'
               exit 0
             fi
             sleep 1

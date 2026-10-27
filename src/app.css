@@ -1,0 +1,380 @@
+:root {
+	font-family:
+		ui-sans-serif,
+		system-ui,
+		-apple-system,
+		BlinkMacSystemFont,
+		'Segoe UI',
+		sans-serif;
+	color-scheme: light dark;
+	--background: #f7f8f5;
+	--surface: #fff;
+	--text: #203a38;
+	--muted: #5a6e69;
+	--line: #dce4dd;
+	--accent: #276b57;
+	--accent-soft: #e8f2e9;
+	--error: #973b32;
+	--error-bg: #fff0ed;
+	color: var(--text);
+	background: var(--background);
+	font-synthesis: none;
+	line-height: 1.55;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--background: #122220;
+		--surface: #1b302c;
+		--text: #ebf1e9;
+		--muted: #acbeb5;
+		--line: #354a42;
+		--accent: #abd9b1;
+		--accent-soft: #2a483b;
+		--error: #ffc1b5;
+		--error-bg: #4c2c29;
+	}
+}
+
+* {
+	box-sizing: border-box;
+}
+body {
+	margin: 0;
+}
+a {
+	color: inherit;
+}
+button,
+input,
+select {
+	font: inherit;
+}
+button,
+a,
+input,
+select {
+	-webkit-tap-highlight-color: transparent;
+}
+button {
+	cursor: pointer;
+}
+:focus-visible {
+	outline: 3px solid var(--accent);
+	outline-offset: 4px;
+}
+h1,
+h2,
+h3,
+p {
+	margin: 0;
+}
+h1 {
+	font-size: clamp(1.85rem, 5vw, 2.5rem);
+	line-height: 1.2;
+	letter-spacing: -0.04em;
+	font-weight: 650;
+}
+h2 {
+	font-size: 1.25rem;
+	letter-spacing: -0.02em;
+}
+h3 {
+	font-size: 1rem;
+}
+.brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	font-size: 1.35rem;
+	font-weight: 750;
+	letter-spacing: -0.055em;
+	text-decoration: none;
+}
+.brand-dot {
+	width: 0.4rem;
+	height: 0.4rem;
+	background: var(--accent);
+	border-radius: 50%;
+	margin-top: 0.6rem;
+}
+.eyebrow {
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
+	font-size: 0.68rem;
+	font-weight: 700;
+	color: var(--accent);
+	margin-bottom: 0.9rem;
+}
+.intro {
+	margin-top: 0.9rem;
+	color: var(--muted);
+	max-width: 35rem;
+}
+.hint {
+	font-size: 0.8rem;
+	color: var(--muted);
+	margin-top: 0.45rem;
+}
+.welcome {
+	width: min(100%, 36rem);
+	margin: 0 auto;
+	padding: 2rem 1.25rem;
+}
+.welcome > .brand {
+	margin-bottom: 1.6rem;
+}
+.welcome-card {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	padding: 1.5rem;
+	border-radius: 1.2rem;
+}
+.welcome-card h1 {
+	font-size: 2rem;
+}
+.welcome-card form {
+	margin-top: 1.75rem;
+}
+.welcome-footer {
+	text-align: center;
+	margin-top: 1.5rem;
+	font-size: 0.75rem;
+	color: var(--muted);
+}
+fieldset {
+	border: 0;
+	border-top: 1px solid var(--line);
+	padding: 1.25rem 0 0;
+	margin: 1.5rem 0 0;
+	min-width: 0;
+}
+legend {
+	padding-right: 0.75rem;
+	font-size: 0.85rem;
+	font-weight: 650;
+}
+label {
+	display: block;
+	font-size: 0.85rem;
+	font-weight: 600;
+	margin-top: 1rem;
+	margin-bottom: 0.4rem;
+}
+label:first-child,
+fieldset label:first-of-type {
+	margin-top: 0;
+}
+input,
+select {
+	display: block;
+	width: 100%;
+	min-height: 3rem;
+	border-radius: 0.5rem;
+	border: 1px solid var(--line);
+	background: var(--background);
+	color: var(--text);
+	padding: 0.65rem 0.8rem;
+	font-size: 1rem;
+}
+input::placeholder {
+	color: var(--muted);
+	opacity: 0.85;
+}
+.primary,
+.secondary {
+	border-radius: 0.55rem;
+	min-height: 3rem;
+	padding: 0.65rem 1.25rem;
+	font-weight: 650;
+	border: 1px solid var(--accent);
+}
+.primary {
+	margin-top: 1.5rem;
+	width: 100%;
+	background: var(--accent);
+	color: var(--surface);
+}
+.secondary {
+	background: transparent;
+	color: var(--accent);
+}
+.primary:hover,
+.secondary:hover {
+	filter: brightness(0.9);
+}
+.form-error {
+	background: var(--error-bg);
+	color: var(--error);
+	padding: 0.8rem 1rem;
+	border-radius: 0.5rem;
+	margin-bottom: 1.25rem;
+	font-size: 0.9rem;
+}
+.app-shell {
+	max-width: 76rem;
+	margin: 0 auto;
+}
+.app-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid var(--line);
+	gap: 1.5rem;
+}
+.house-name {
+	font-size: 0.75rem;
+	color: var(--muted);
+	margin-top: 0.1rem;
+	overflow-wrap: anywhere;
+}
+.member-name {
+	font-size: 0.8rem;
+	color: var(--muted);
+	overflow-wrap: anywhere;
+}
+.app-content {
+	padding: 2.5rem 1.5rem calc(7rem + env(safe-area-inset-bottom));
+}
+.tabs {
+	position: fixed;
+	z-index: 10;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	padding: 0.55rem 0.3rem calc(0.55rem + env(safe-area-inset-bottom));
+	border-top: 1px solid var(--line);
+	background: var(--surface);
+}
+.tabs a {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.35rem 0.1rem;
+	text-decoration: none;
+	color: var(--muted);
+	border-radius: 0.5rem;
+	font-size: 0.62rem;
+	min-height: 3.3rem;
+	justify-content: center;
+}
+.tabs svg {
+	width: 1.35rem;
+	height: 1.35rem;
+}
+.tabs a span {
+	min-height: 2.4em;
+	line-height: 1.2;
+	text-align: center;
+	display: grid;
+	place-items: center;
+}
+.tabs a[aria-current] {
+	background: var(--accent-soft);
+	color: var(--accent);
+	font-weight: 700;
+}
+.empty-state {
+	border: 1px dashed var(--line);
+	background: var(--surface);
+	border-radius: 1rem;
+	margin-top: 2rem;
+	padding: 3rem 1.5rem;
+	text-align: center;
+}
+.empty-icon {
+	border-radius: 1rem;
+	width: 4rem;
+	height: 4rem;
+	margin: 0 auto 1.5rem;
+	display: grid;
+	place-items: center;
+	background: var(--accent-soft);
+	color: var(--accent);
+}
+.empty-icon svg {
+	width: 2rem;
+	height: 2rem;
+}
+.empty-state p {
+	font-size: 0.9rem;
+	color: var(--muted);
+	max-width: 25rem;
+	margin: 0.65rem auto 1.25rem;
+}
+.coming-soon {
+	display: inline-block;
+	font-size: 0.7rem;
+	border-radius: 1rem;
+	padding: 0.25rem 0.75rem;
+	background: var(--accent-soft);
+	color: var(--accent);
+	font-weight: 600;
+}
+.settings-card {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 1rem;
+	padding: 1.5rem;
+	margin-top: 2rem;
+}
+.member-details {
+	border-block: 1px solid var(--line);
+	padding: 1.5rem 0;
+	margin: 1.5rem 0;
+	overflow-wrap: anywhere;
+}
+.member-details > p {
+	font-size: 0.85rem;
+}
+
+@media (min-width: 48rem) {
+	.welcome {
+		padding-top: 3rem;
+	}
+	.welcome-card {
+		padding: 2.25rem;
+	}
+	.sign-in {
+		padding-top: 10vh;
+	}
+	.app-header {
+		padding: 1.75rem 3rem;
+	}
+	.app-content {
+		padding: 3rem;
+	}
+	.tabs {
+		position: static;
+		border-top: 0;
+		border-bottom: 1px solid var(--line);
+		background: transparent;
+		display: flex;
+		gap: 0.5rem;
+		padding: 0.75rem 3rem;
+	}
+	.tabs a {
+		flex-direction: row;
+		gap: 0.6rem;
+		padding: 0.65rem 1rem;
+		font-size: 0.85rem;
+		min-height: 2.75rem;
+	}
+	.tabs svg {
+		width: 1.2rem;
+		height: 1.2rem;
+	}
+	.tabs a span {
+		min-height: 0;
+	}
+	.empty-state {
+		padding: 4.5rem 2rem;
+	}
+	.settings-card {
+		max-width: 38rem;
+	}
+}

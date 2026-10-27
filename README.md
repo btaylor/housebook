@@ -1,7 +1,7 @@
 # Housebook
 
-A self-hosted, shared record of one House. This project skeleton serves a placeholder page.
-Setup, sign-in, and domain operations are not implemented yet.
+A self-hosted, shared record of one House. Create your House, sign in, and move between
+Items, Maintenance Log, Contractors, and Settings. Record-management screens are placeholders.
 
 ## Run with Docker Compose
 
@@ -39,6 +39,26 @@ docker build -t housebook:local .
 docker run --rm -p 3000:3000 --mount type=bind,src="$(pwd)/data",dst=/data housebook:local
 ```
 
+### First-start setup and sign-in
+
+On first start, read the one-time setup code from `docker compose logs housebook`.
+Open Housebook and enter the code, House name, ISO 4217 currency code, and first Member's
+name, email, and password. Passwords need at least 12 characters with no composition rules.
+The setup code stops working once the House exists. Restarting before setup prints a new code.
+
+Sign in with email and password. Email matching ignores case. Sessions last 30 days from
+the last visit. Settings lets you sign out of the current device only.
+Housebook does not send email, verify addresses, or make outgoing runtime requests.
+
+Plain HTTP works directly on a LAN. HTTPS is recommended. Behind an HTTPS reverse proxy,
+set `PROTOCOL_HEADER=x-forwarded-proto` and `HOST_HEADER=x-forwarded-host` on the container.
+The proxy must overwrite those headers with the external scheme and host, and the container
+must only accept traffic from that trusted proxy. Do not enable proxy headers on a directly
+exposed installation. Direct HTTP ignores client-supplied transport headers.
+The cookie is HTTP-only, SameSite=Lax, and Secure only when the incoming scheme is HTTPS.
+SvelteKit checks the request origin for form submissions; this check remains enabled.
+The optional `HOUSEBOOK_URL` for future Invite/reset links is not used by sign-in.
+
 ### Persistent data and upgrades
 
 Back up the **entire `data/` directory** mounted at `/data`: it holds `housebook.sqlite`,
@@ -52,7 +72,7 @@ docker compose start
 ```
 
 Startup applies packaged Drizzle migrations before the server listens.
-On first start, it creates the database and migration history without domain tables.
+On first start, it creates the database, migration history, and House/Member/Session tables.
 Before applying pending migrations to an existing database, it writes a consistent
 `housebook.pre-migration-<UTC timestamp>-<unique id>.sqlite` backup under `/data`.
 This includes committed SQLite WAL contents. Migration backups cover the database only;
@@ -102,12 +122,14 @@ amd64 and arm64 without runtime networking. It does not publish an image.
 
 ### Core and migrations
 
-All future domain rules belong in the server-only Housebook core. Routes use the initialized
+All domain rules belong in the server-only Housebook core. Routes use the initialized
 core from `event.locals.housebook`; they must remain thin adapters.
 The core constructor takes a Drizzle database handle, a data directory, and a clock function.
 `src/lib/server/testing/harness.ts` creates that core with temporary SQLite/data files and a
-clock that tests can advance. Vitest covers startup, WAL-safe upgrade backups, rollback on failure,
-and downgrade refusal. Playwright checks the built app and refusal to listen on incompatible data.
+clock that tests can advance. Vitest covers setup, credentials, sliding sessions, startup,
+WAL-safe upgrade backups, rollback on failure, and downgrade refusal. Playwright starts an isolated
+built app for each journey and reads the real setup code from its startup output. It checks phone
+setup/sign-out/sign-in, navigation, themes, route guards, cookies, CSRF, and proxy header handling.
 
 Define future tables in `src/lib/server/schema.ts`, then run:
 
@@ -116,8 +138,7 @@ npm run db:generate -- --name=describe-the-change
 ```
 
 Commit the generated migration directory and snapshot. Never edit an applied migration.
-The initial custom migration is intentionally a no-op: Drizzle creates and records migration
-history, but this skeleton has no domain schema.
+The initial custom migration remains a no-op baseline. Later migrations add the domain schema.
 
 ## License
 
