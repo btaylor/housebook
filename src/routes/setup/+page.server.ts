@@ -24,6 +24,7 @@ export const actions: Actions = {
 		try {
 			const session = await event.locals.housebook.setup.complete({
 				...values,
+				userAgent: event.request.headers.get('user-agent') ?? '',
 				code: String(form.get('code') ?? ''),
 				password: String(form.get('password') ?? '')
 			});
