@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { sql } from 'drizzle-orm';
+import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { afterEach, describe, expect, test } from 'vitest';
 import { createHousebookHarness } from '../testing/harness';
 
@@ -34,16 +35,16 @@ describe('Housebook construction', () => {
 		expect(harness.core.clock().toISOString()).toBe('2026-02-03T04:05:06.000Z');
 	});
 
-	test('applies the baseline on first start without domain tables or an unnecessary backup', async () => {
+	test('applies all packaged migrations on first start without an unnecessary backup', async () => {
 		const harness = await createHarness();
+		const migrations = readMigrationFiles({ migrationsFolder: harness.migrationsDirectory });
 		expect(
 			harness.core.database.all(
-				sql`SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name`
+				sql`SELECT hash, created_at, name FROM "__drizzle_migrations" ORDER BY id`
 			)
-		).toEqual([{ name: '__drizzle_migrations' }]);
-		expect(
-			harness.core.database.get(sql`SELECT count(*) AS count FROM "__drizzle_migrations"`)
-		).toEqual({ count: 1 });
+		).toEqual(
+			migrations.map(({ hash, folderMillis, name }) => ({ hash, created_at: folderMillis, name }))
+		);
 		expect(backups(harness)).toEqual([]);
 		await harness.start();
 		expect(backups(harness)).toEqual([]);
@@ -58,6 +59,9 @@ describe('startup migrations', () => {
 				sql: 'CREATE TABLE fixture (value TEXT NOT NULL);'
 			}
 		]);
+		const previousMigrations = harness.core.database.all(
+			sql`SELECT hash, created_at, name FROM "__drizzle_migrations" ORDER BY id`
+		);
 		harness.stop();
 
 		const writer = new DatabaseSync(join(harness.dataDirectory, 'housebook.sqlite'));
@@ -81,8 +85,10 @@ describe('startup migrations', () => {
 					{ value: 'keep this committed WAL row' }
 				]);
 				expect(
-					snapshot.prepare('SELECT count(*) AS count FROM "__drizzle_migrations"').get()
-				).toEqual({ count: 2 });
+					snapshot
+						.prepare('SELECT hash, created_at, name FROM "__drizzle_migrations" ORDER BY id')
+						.all()
+				).toEqual(previousMigrations);
 				expect(snapshot.prepare('PRAGMA integrity_check').get()).toEqual({ integrity_check: 'ok' });
 			} finally {
 				snapshot.close();
@@ -134,6 +140,9 @@ describe('startup migrations', () => {
 
 	test('keeps the pre-upgrade database and backup when a migration fails', async () => {
 		const harness = await createHarness();
+		const previousMigrations = harness.core.database.all(
+			sql`SELECT hash, created_at, name FROM "__drizzle_migrations" ORDER BY id`
+		);
 		harness.addMigration({
 			name: '20261028000000_broken',
 			sql: 'CREATE TABLE partial (value TEXT); --> statement-breakpoint\nINVALID SQL;'
@@ -147,10 +156,10 @@ describe('startup migrations', () => {
 				database.prepare("SELECT name FROM sqlite_master WHERE name = 'partial'").get()
 			).toBeUndefined();
 			expect(
-				database.prepare('SELECT count(*) AS count FROM "__drizzle_migrations"').get()
-			).toEqual({
-				count: 1
-			});
+				database
+					.prepare('SELECT hash, created_at, name FROM "__drizzle_migrations" ORDER BY id')
+					.all()
+			).toEqual(previousMigrations);
 		} finally {
 			database.close();
 		}

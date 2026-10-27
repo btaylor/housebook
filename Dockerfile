@@ -19,9 +19,9 @@ ENV NODE_ENV=production \
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
 COPY --from=build /app/drizzle ./drizzle
-COPY package.json ./
+COPY package.json server.js ./
 RUN mkdir /data && chown node:node /data
 USER node
 VOLUME ["/data"]
 EXPOSE 3000
-CMD ["node", "build"]
+CMD ["node", "server.js"]

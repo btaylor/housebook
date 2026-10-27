@@ -17,7 +17,7 @@ test('exits before listening when the database has unknown migrations', async ()
 		VALUES ('future-hash', 9999999999999, '20990101000000_future');
 	`);
 	database.close();
-	const child = spawn(process.execPath, ['build'], {
+	const child = spawn(process.execPath, ['server.js'], {
 		env: { ...process.env, HOUSEBOOK_DATA_DIR: dataDirectory, HOST: '127.0.0.1', PORT: '0' },
 		stdio: ['ignore', 'pipe', 'pipe']
 	});
