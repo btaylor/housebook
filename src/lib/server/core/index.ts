@@ -93,7 +93,7 @@ class Setup {
 		const email = input.email.trim().toLowerCase();
 		if (!name) throw new DomainError('invalid-house-name', 'Enter a House name.');
 		if (!currencies.includes(currency)) {
-			throw new DomainError('invalid-currency', 'Choose an ISO 4217 currency code.');
+			throw new DomainError('invalid-currency', 'Choose a currency from the list.');
 		}
 		if (!memberName) throw new DomainError('invalid-member-name', 'Enter your name.');
 		if (!/^[^\s@]+@[^\s@]+$/.test(email)) {

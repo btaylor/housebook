@@ -46,7 +46,7 @@ docker run -d --name housebook --restart unless-stopped -p 3000:3000 \
 ## First-start setup and sign-in
 
 On first start, read the one-time setup code from `docker compose logs housebook`.
-Open Housebook and enter the code, House name, ISO 4217 currency code, and first Member's
+Open Housebook and enter the code, House name, currency, and first Member's
 name, email, and password. Passwords need at least 12 characters with no composition rules.
 The setup code stops working once the House exists. Restarting before setup prints a new code.
 

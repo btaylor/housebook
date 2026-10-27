@@ -15,7 +15,7 @@
 	<section class="welcome-card">
 		<p class="eyebrow">A fresh start</p>
 		<h1>Every House has a story.</h1>
-		<p class="intro">Keep yours together. Set up your House and become its first Member.</p>
+		<p class="intro">Keep yours in one place. Set up your House and become its first Member.</p>
 		<form method="POST">
 			{#if form?.message}<p class="form-error" role="alert">{form.message}</p>{/if}
 			<label for="code">Setup code</label>
@@ -47,10 +47,11 @@
 					value={form?.values.currency ?? 'USD'}
 					aria-describedby="currency-hint"
 				>
-					{#each data.currencies as currency (currency)}<option value={currency}>{currency}</option
-						>{/each}
+					{#each data.currencies as currency (currency.code)}
+						<option value={currency.code}>{currency.name} ({currency.code})</option>
+					{/each}
 				</select>
-				<p id="currency-hint" class="hint">ISO 4217 code for costs in your Housebook.</p>
+				<p id="currency-hint" class="hint">Currency for costs in your Housebook.</p>
 			</fieldset>
 			<fieldset>
 				<legend>First Member</legend>

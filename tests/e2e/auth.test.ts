@@ -32,7 +32,8 @@ test('phone first-start setup, sign-out and sign-in reach the responsive offline
 	await expect(page.getByRole('heading', { name: 'Every House has a story.' })).toBeVisible();
 	await page.getByLabel('Setup code').fill('incorrect');
 	await page.getByLabel('House name').fill(setup.houseName);
-	await page.getByLabel('Currency', { exact: true }).selectOption(setup.currency);
+	await page.getByLabel('Currency', { exact: true }).selectOption({ label: 'US Dollar (USD)' });
+	await expect(page.getByLabel('Currency', { exact: true })).toHaveValue(setup.currency);
 	await page.getByLabel('Your name').fill(setup.memberName);
 	await page.getByLabel('Email', { exact: true }).fill(member.email);
 	await page.getByLabel('Password', { exact: true }).fill(member.password);

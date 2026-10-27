@@ -3,7 +3,14 @@ import { currencies, DomainError } from '../../lib/server/core';
 import { setSessionCookie } from '../../lib/server/session-cookie';
 import type { Actions } from './$types';
 
-export const load = () => ({ currencies });
+export const load = () => {
+	const names = new Intl.DisplayNames(['en'], { type: 'currency' });
+	return {
+		currencies: currencies
+			.map((code) => ({ code, name: names.of(code) ?? code }))
+			.sort((a, b) => a.name.localeCompare(b.name, 'en'))
+	};
+};
 
 export const actions: Actions = {
 	default: async (event) => {
