@@ -195,7 +195,7 @@ export class Housebook {
 	) {
 		this.auth = new Auth(database, clock);
 		this.setup = new Setup(database, clock);
-		this.members = new HouseholdMembers(database);
+		this.members = new HouseholdMembers(database, clock, this.auth);
 		this.invites = new Invites(database, clock);
 		this.contractors = new Contractors(database, clock);
 		const files = new Files(database, dataDirectory);
@@ -206,11 +206,15 @@ export class Housebook {
 	serviceRecordOptions(id?: string) {
 		const record = id ? this.serviceRecords.get(id) : null;
 		const activeContractors = this.contractors.listActive();
+		const activeMembers = this.members.list();
 		return {
 			contractors: record?.contractor?.archivedAt
 				? [...activeContractors, record.contractor]
 				: activeContractors,
-			members: this.members.list(),
+			members:
+				record?.member && !activeMembers.some((member) => member.id === record.member!.id)
+					? [...activeMembers, record.member]
+					: activeMembers,
 			items: this.items.list({ includeRetired: true })
 		};
 	}
@@ -284,14 +288,47 @@ class Setup {
 }
 
 class HouseholdMembers {
-	constructor(private database: NodeSQLiteDatabase) {}
+	constructor(
+		private database: NodeSQLiteDatabase,
+		private clock: () => Date,
+		private auth: Auth
+	) {}
 
 	list(): Member[] {
 		return this.database
 			.select(memberFields)
 			.from(members)
+			.where(isNull(members.removedAt))
 			.orderBy(asc(members.createdAt), asc(members.id))
 			.all();
+	}
+
+	remove(token: string, id: string) {
+		this.database.transaction(() => {
+			this.auth.requireSession(token);
+			const member = this.database
+				.select({ id: members.id })
+				.from(members)
+				.where(and(eq(members.id, id), isNull(members.removedAt)))
+				.get();
+			if (!member) throw new DomainError('member-not-found', 'Member not found.');
+			const remaining = this.database
+				.select({ total: count() })
+				.from(members)
+				.where(isNull(members.removedAt))
+				.get()!.total;
+			if (remaining <= 1) {
+				throw new DomainError('last-member', 'The last Member cannot be removed.');
+			}
+			const now = this.clock();
+			this.database.update(members).set({ removedAt: now }).where(eq(members.id, id)).run();
+			this.database.delete(sessions).where(eq(sessions.memberId, id)).run();
+			this.database
+				.update(invites)
+				.set({ revokedAt: now })
+				.where(and(eq(invites.createdBy, id), isNull(invites.usedAt), isNull(invites.revokedAt)))
+				.run();
+		});
 	}
 }
 
@@ -303,7 +340,11 @@ class Invites {
 
 	create(memberId: string, requestOrigin: string, housebookUrl?: string) {
 		if (
-			!this.database.select({ id: members.id }).from(members).where(eq(members.id, memberId)).get()
+			!this.database
+				.select({ id: members.id })
+				.from(members)
+				.where(and(eq(members.id, memberId), isNull(members.removedAt)))
+				.get()
 		) {
 			throw new DomainError('member-not-found', 'Member not found.');
 		}
@@ -395,7 +436,7 @@ class Invites {
 			this.database
 				.select({ id: members.id })
 				.from(members)
-				.where(sql`lower(${members.email}) = ${email}`)
+				.where(and(sql`lower(${members.email}) = ${email}`, isNull(members.removedAt)))
 				.get()
 		) {
 			throw new DomainError('email-in-use', 'A Member already uses this email address.');
@@ -516,7 +557,9 @@ class Auth {
 		const member = this.database
 			.select()
 			.from(members)
-			.where(eq(sql`lower(${members.email})`, email.trim().toLowerCase()))
+			.where(
+				and(eq(sql`lower(${members.email})`, email.trim().toLowerCase()), isNull(members.removedAt))
+			)
 			.get();
 		this.checkLock(member?.signInLockedUntil);
 		const correct = await verifyPassword(password, member?.passwordHash);
@@ -524,7 +567,11 @@ class Auth {
 			throw new DomainError('invalid-credentials', 'Email or password is incorrect.');
 		}
 		const result = this.database.transaction(() => {
-			const current = this.database.select().from(members).where(eq(members.id, member.id)).get();
+			const current = this.database
+				.select()
+				.from(members)
+				.where(and(eq(members.id, member.id), isNull(members.removedAt)))
+				.get();
 			this.checkLock(current?.signInLockedUntil);
 			if (!current) {
 				return new DomainError('invalid-credentials', 'Email or password is incorrect.');
@@ -581,7 +628,7 @@ class Auth {
 			.select({ member: memberFields, expiresAt: sessions.expiresAt })
 			.from(sessions)
 			.innerJoin(members, eq(members.id, sessions.memberId))
-			.where(eq(sessions.tokenHash, hash))
+			.where(and(eq(sessions.tokenHash, hash), isNull(members.removedAt)))
 			.get();
 		if (!row) return null;
 		const now = this.clock();
@@ -622,7 +669,7 @@ class Auth {
 				cause instanceof Error &&
 				'errcode' in cause &&
 				cause.errcode === sqliteConstraintUnique &&
-				cause.message === "UNIQUE constraint failed: index 'members_email_unique'"
+				cause.message === "UNIQUE constraint failed: index 'active_members_email_unique'"
 			) {
 				throw new DomainError('email-in-use', 'Another Member uses that email address.');
 			}

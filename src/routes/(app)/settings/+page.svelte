@@ -140,8 +140,9 @@
 <section class="settings-card" aria-labelledby="members-heading">
 	<h2 id="members-heading">Members</h2>
 	<p class="hint">Everyone in the Household has the same access.</p>
-	{#if form?.section === 'members' && form.message}
-		<p class="form-error" role="alert">{form.message}</p>
+	{#if form?.section === 'members'}
+		{#if form.message}<p class="form-error" role="alert">{form.message}</p>
+		{:else if form.removed}<p class="form-success" role="status">Member removed.</p>{/if}
 	{/if}
 	{#if form?.reset}
 		<div class="invite-link">
@@ -152,6 +153,9 @@
 				it is not stored. No email is sent.
 			</p>
 		</div>
+	{/if}
+	{#if data.members.length === 1}
+		<p class="hint">The last Member cannot be removed.</p>
 	{/if}
 	<ul class="household-list" aria-label="Members">
 		{#each data.members as member (member.id)}
@@ -169,6 +173,17 @@
 							>Create password reset link</button
 						>
 					</form>
+					<details>
+						<summary>Remove {member.name}</summary>
+						<form method="POST" action="?/removeMember#members-heading">
+							<input type="hidden" name="id" value={member.id} />
+							<p class="hint">
+								{member.name} will no longer be able to sign in. All their sessions and unused Invites
+								will end. Their name will stay on past Service Records.
+							</p>
+							<button class="secondary" type="submit">Confirm removal</button>
+						</form>
+					</details>
 				{/if}
 			</li>
 		{/each}
@@ -248,6 +263,11 @@
 	}
 	.household-list form {
 		margin-top: 0.75rem;
+	}
+	.household-list summary {
+		cursor: pointer;
+		color: var(--error);
+		padding: 0.75rem 0;
 	}
 	.invite-link {
 		margin-top: 1.5rem;

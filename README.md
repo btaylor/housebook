@@ -81,6 +81,11 @@ The invited person opens the link and enters their name, a unique email address
 Set `HOUSEBOOK_URL=https://housebook.example` to use your public address in Invite links.
 Without it, Housebook uses the incoming request's origin.
 
+Remove another Member from the Members list in Settings. Removal ends their sessions and unused
+Invites, prevents sign-in, and frees their email address for reuse. Their name stays on past
+Service Records, which remain editable. Removed Members cannot be selected for new work.
+The last Member cannot be removed.
+
 ## Password recovery
 
 In Settings, find the Member who needs access and choose **Create password reset link**.

@@ -31,6 +31,22 @@ export const actions: Actions = {
 			return formError(error, 'members');
 		}
 	},
+	removeMember: async ({ locals, cookies, request, url }) => {
+		const form = await request.formData();
+		try {
+			locals.housebook.members.remove(
+				cookies.get(sessionCookie) ?? '',
+				String(form.get('id') ?? '')
+			);
+		} catch (error) {
+			return formError(error, 'members');
+		}
+		if (!locals.housebook.auth.validateSession(cookies.get(sessionCookie) ?? '')) {
+			cookies.delete(sessionCookie, { path: '/', secure: url.protocol === 'https:' });
+			redirect(303, '/sign-in');
+		}
+		return { section: 'members', removed: true };
+	},
 	createInvite: ({ locals, url }) => ({
 		invite: locals.housebook.invites.create(
 			locals.member!.id,
