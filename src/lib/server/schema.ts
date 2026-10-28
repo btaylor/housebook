@@ -162,3 +162,15 @@ export const serviceRecordItems = sqliteTable(
 		index('service_record_items_item').on(table.itemId)
 	]
 );
+
+export const passwordResets = sqliteTable('password_resets', {
+	id: text().primaryKey(),
+	tokenHash: text().notNull().unique(),
+	memberId: text()
+		.notNull()
+		.references(() => members.id, { onDelete: 'cascade' }),
+	createdBy: text().references(() => members.id),
+	createdAt: integer({ mode: 'timestamp_ms' }).notNull(),
+	expiresAt: integer({ mode: 'timestamp_ms' }).notNull(),
+	usedAt: integer({ mode: 'timestamp_ms' })
+});

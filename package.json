@@ -8,7 +8,7 @@
 	},
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "vite build && vite build --config vite.cli.config.ts",
 		"start": "node server.js",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync",

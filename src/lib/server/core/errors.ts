@@ -7,6 +7,8 @@ export type DomainErrorCode =
 	| 'invalid-email'
 	| 'password-too-short'
 	| 'invalid-invite'
+	| 'invalid-password-reset'
+	| 'cannot-reset-self'
 	| 'member-not-found'
 	| 'invalid-credentials'
 	| 'sign-in-locked'

@@ -36,7 +36,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.cookies.delete(sessionCookie, { path: '/', secure: event.url.protocol === 'https:' });
 	}
 	if (path === '/setup') redirect(303, session ? '/items' : '/sign-in');
-	if (!session && path !== '/sign-in' && !/^\/invite\/[^/]+$/.test(path)) {
+	if (!session && path !== '/sign-in' && !/^\/(?:invite|reset-password)\/[^/]+$/.test(path)) {
 		redirect(303, '/sign-in');
 	}
 	if (session && path === '/sign-in') redirect(303, '/items');

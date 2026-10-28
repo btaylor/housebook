@@ -16,6 +16,21 @@ function formError(error: unknown, section: string) {
 }
 
 export const actions: Actions = {
+	createPasswordReset: async ({ locals, cookies, request, url }) => {
+		const form = await request.formData();
+		try {
+			return {
+				reset: locals.housebook.auth.createPasswordReset(
+					cookies.get(sessionCookie) ?? '',
+					String(form.get('memberId') ?? ''),
+					url.origin,
+					process.env.HOUSEBOOK_URL
+				)
+			};
+		} catch (error) {
+			return formError(error, 'members');
+		}
+	},
 	createInvite: ({ locals, url }) => ({
 		invite: locals.housebook.invites.create(
 			locals.member!.id,

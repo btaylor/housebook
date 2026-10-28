@@ -1,7 +1,15 @@
-import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { and, asc, count, desc, DrizzleQueryError, eq, gt, isNull, lte, sql } from 'drizzle-orm';
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
-import { contractors, houses, invites, members, sessions, signInAttempts } from '../schema';
+import {
+	contractors,
+	houses,
+	invites,
+	members,
+	passwordResets,
+	sessions,
+	signInAttempts
+} from '../schema';
 import { currencies } from './currencies';
 import { DomainError } from './errors';
 import { Documents } from './documents';
@@ -9,6 +17,7 @@ import { Files } from './files';
 import { Items } from './items';
 import { hashPassword, verifyPassword } from './passwords';
 import { ServiceRecords } from './service-records';
+import { createTokenLink, tokenHash } from './tokens';
 
 export { currencies } from './currencies';
 
@@ -144,9 +153,9 @@ interface SetupInput extends MemberInput {
 
 const sessionLifetime = 30 * 24 * 60 * 60 * 1000;
 const inviteLifetime = 7 * 24 * 60 * 60 * 1000;
+const resetLifetime = 24 * 60 * 60 * 1000;
 const signInWindow = 15 * 60 * 1000;
 const sqliteConstraintUnique = 2067;
-const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
 const memberFields = { id: members.id, name: members.name, email: members.email };
 function validatePassword(password: string) {
 	if ([...password].length < 12) {
@@ -298,8 +307,7 @@ class Invites {
 		) {
 			throw new DomainError('member-not-found', 'Member not found.');
 		}
-		const token = randomBytes(32).toString('base64url');
-		const url = new URL(`/invite/${token}`, housebookUrl || requestOrigin).href;
+		const { tokenHash, url } = createTokenLink('/invite', requestOrigin, housebookUrl);
 		const now = this.clock();
 		const invite = {
 			id: randomUUID(),
@@ -309,7 +317,7 @@ class Invites {
 		};
 		this.database
 			.insert(invites)
-			.values({ ...invite, tokenHash: tokenHash(token) })
+			.values({ ...invite, tokenHash })
 			.run();
 		return { ...invite, url };
 	}
@@ -400,6 +408,109 @@ class Auth {
 		private database: NodeSQLiteDatabase,
 		private clock: () => Date
 	) {}
+	createPasswordReset(
+		sessionToken: string,
+		memberId: string,
+		requestOrigin: string,
+		housebookUrl?: string
+	) {
+		const { member } = this.requireSession(sessionToken);
+		if (member.id === memberId) {
+			throw new DomainError(
+				'cannot-reset-self',
+				'Ask another Member for a reset link, or use the installer command.'
+			);
+		}
+		return this.issuePasswordReset(memberId, requestOrigin, housebookUrl, member.id);
+	}
+
+	createPasswordResetForEmail(email: string, requestOrigin: string, housebookUrl?: string) {
+		const member = this.database
+			.select({ id: members.id })
+			.from(members)
+			.where(eq(sql`lower(${members.email})`, email.trim().toLowerCase()))
+			.get();
+		if (!member) throw new DomainError('member-not-found', 'No Member uses that email address.');
+		return this.issuePasswordReset(member.id, requestOrigin, housebookUrl);
+	}
+
+	isPasswordResetValid(token: string) {
+		return this.findPasswordReset(token) !== undefined;
+	}
+
+	async resetPassword(token: string, password: string) {
+		this.requirePasswordReset(token);
+		validatePassword(password);
+		const passwordHash = await hashPassword(password);
+		this.database.transaction(() => {
+			const reset = this.requirePasswordReset(token);
+			this.database
+				.update(members)
+				.set({ passwordHash, signInLockedUntil: null })
+				.where(eq(members.id, reset.memberId))
+				.run();
+			this.database.delete(signInAttempts).where(eq(signInAttempts.memberId, reset.memberId)).run();
+			this.database.delete(sessions).where(eq(sessions.memberId, reset.memberId)).run();
+			this.database
+				.update(passwordResets)
+				.set({ usedAt: this.clock() })
+				.where(eq(passwordResets.id, reset.id))
+				.run();
+		});
+	}
+
+	private issuePasswordReset(
+		memberId: string,
+		requestOrigin: string,
+		housebookUrl?: string,
+		createdBy?: string
+	) {
+		const member = this.database
+			.select(memberFields)
+			.from(members)
+			.where(eq(members.id, memberId))
+			.get();
+		if (!member) throw new DomainError('member-not-found', 'Member not found.');
+		const { tokenHash, url } = createTokenLink('/reset-password', requestOrigin, housebookUrl);
+		const now = this.clock();
+		const reset = {
+			id: randomUUID(),
+			memberId,
+			createdBy,
+			createdAt: now,
+			expiresAt: new Date(now.getTime() + resetLifetime)
+		};
+		this.database
+			.insert(passwordResets)
+			.values({ ...reset, tokenHash })
+			.run();
+		return { ...reset, memberName: member.name, url };
+	}
+
+	private findPasswordReset(token: string) {
+		return this.database
+			.select({ id: passwordResets.id, memberId: passwordResets.memberId })
+			.from(passwordResets)
+			.where(
+				and(
+					eq(passwordResets.tokenHash, tokenHash(token)),
+					isNull(passwordResets.usedAt),
+					gt(passwordResets.expiresAt, this.clock())
+				)
+			)
+			.get();
+	}
+
+	private requirePasswordReset(token: string) {
+		const reset = this.findPasswordReset(token);
+		if (!reset) {
+			throw new DomainError(
+				'invalid-password-reset',
+				'This reset link is invalid, expired, or already used. Ask a Member or the installer for a new link.'
+			);
+		}
+		return reset;
+	}
 
 	async signIn(email: string, password: string, userAgent?: string): Promise<Session> {
 		const member = this.database

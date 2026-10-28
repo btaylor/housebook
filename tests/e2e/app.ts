@@ -8,6 +8,7 @@ import { test as base } from '@playwright/test';
 interface RunningApp {
 	url: string;
 	setupCode: string;
+	dataDirectory: string;
 }
 
 export const test = base.extend<{ app: RunningApp; appOrigin: string | undefined }>({
@@ -35,7 +36,7 @@ export const test = base.extend<{ app: RunningApp; appOrigin: string | undefined
 					const setupCode = output.match(/Housebook setup code: (\S+)/)?.[1];
 					if (url && setupCode) {
 						clearTimeout(timeout);
-						resolve({ url, setupCode });
+						resolve({ url, setupCode, dataDirectory });
 					}
 				}
 				child.stdout.on('data', read);
