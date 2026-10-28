@@ -1,5 +1,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { setFlagsFromString } from 'node:v8';
+import { runInNewContext } from 'node:vm';
 import { eq } from 'drizzle-orm';
 import { afterEach, expect, test } from 'vitest';
 import { documents } from '../schema';
@@ -12,6 +14,24 @@ const fixture = (name: string) => readFileSync(resolve('tests/fixtures', name));
 const upload = (name: string, type = '') =>
 	new File([new Uint8Array(fixture(name))], name, { type });
 const storedNames = (harness: Harness) => readdirSync(join(harness.dataDirectory, 'files'));
+setFlagsFromString('--expose-gc');
+const collectGarbage: () => void = runInNewContext('gc');
+
+function paddedPdf(size: number) {
+	const original = fixture('manual.pdf');
+	const xref = original.indexOf('xref\n');
+	const prefix = original.subarray(0, xref);
+	const trailer = original.subarray(xref).toString();
+	let padding = size - original.length;
+	let adjusted: string;
+	let difference: number;
+	do {
+		adjusted = trailer.replace(/startxref\n\d+/, `startxref\n${prefix.length + padding}`);
+		difference = size - (prefix.length + padding + adjusted.length);
+		padding += difference;
+	} while (difference !== 0);
+	return Buffer.concat([prefix, Buffer.alloc(padding, ' '), Buffer.from(adjusted)]);
+}
 
 async function harness() {
 	const value = await createHousebookHarness();
@@ -22,6 +42,70 @@ async function harness() {
 afterEach(() => {
 	for (const value of harnesses.splice(0)) value.dispose();
 });
+test('repeated valid and invalid HEIC uploads do not retain decoder memory', async () => {
+	const value = await harness();
+	const item = value.core.items.create(itemInput);
+	const padding = Buffer.alloc(1024 * 1024);
+	padding.writeUInt32BE(padding.length);
+	padding.write('free', 4);
+	const data = Buffer.concat([fixture('item-photo.heic'), padding]);
+	const photo = new File([data], 'label.heic', { type: 'image/heic' });
+	const broken = new File(
+		[Buffer.concat([fixture('item-photo.heic').subarray(0, 40), padding])],
+		'broken.heic'
+	);
+	await value.core.items.setPhoto(item.id, photo);
+	collectGarbage();
+	collectGarbage();
+	const before = process.memoryUsage().arrayBuffers;
+	for (let index = 0; index < 40; index++) {
+		await value.core.items.setPhoto(item.id, photo);
+		await expect(value.core.items.setPhoto(item.id, broken)).rejects.toMatchObject({
+			code: 'invalid-file'
+		});
+	}
+	collectGarbage();
+	collectGarbage();
+	const retained = process.memoryUsage().arrayBuffers - before;
+	expect(retained).toBeLessThan(8 * 1024 * 1024);
+	expect(storedNames(value)).toHaveLength(1);
+	const opened = value.core.items.openPhoto(item.id);
+	expect(opened.contentType).toBe('image/jpeg');
+	expect(Buffer.concat(await opened.stream.toArray()).subarray(0, 3)).toEqual(
+		Buffer.from([0xff, 0xd8, 0xff])
+	);
+}, 30_000);
+
+test.each([
+	['JPEG marker', 'image/jpeg', 'broken.jpg', () => Buffer.from([0xff, 0xd8, 0xff])],
+	['truncated JPEG', 'image/jpeg', 'broken.jpg', () => fixture('item-photo.jpg').subarray(0, 100)],
+	['PNG signature', 'image/png', 'broken.png', () => fixture('item-photo.png').subarray(0, 8)],
+	['truncated PNG', 'image/png', 'broken.png', () => fixture('item-photo.png').subarray(0, 100)],
+	['PDF header', 'application/pdf', 'broken.pdf', () => Buffer.from('%PDF-not a valid pdf')],
+	['truncated PDF', 'application/pdf', 'broken.pdf', () => fixture('manual.pdf').subarray(0, 100)]
+] as const)(
+	'refuses %s before adding a Document or replacing a good photo',
+	async (_description, type, name, contents) => {
+		const value = await harness();
+		const item = await value.core.items.createWithPhoto(itemInput, upload('item-photo.png'));
+		const oldPhotoId = item.photoId;
+		const before = storedNames(value);
+		const file = new File([new Uint8Array(contents())], name, { type });
+		await expect(
+			value.core.documents.addToItem(item.id, 'Broken Document', file)
+		).rejects.toMatchObject({ code: 'invalid-file' });
+		if (type !== 'application/pdf') {
+			await expect(value.core.items.setPhoto(item.id, file)).rejects.toMatchObject({
+				code: 'invalid-file'
+			});
+		}
+		expect(value.core.documents.listForItem(item.id)).toEqual([]);
+		expect(value.core.items.get(item.id)?.photoId).toBe(oldPhotoId);
+		expect(storedNames(value)).toEqual(before);
+		const opened = value.core.items.openPhoto(item.id);
+		expect(Buffer.concat(await opened.stream.toArray())).toEqual(fixture('item-photo.png'));
+	}
+);
 
 test('stores generated names, original metadata and bytes for PDF, JPEG and PNG Documents', async () => {
 	const value = await harness();
@@ -92,8 +176,7 @@ test('refuses unsupported content and files above 25 MB with distinct errors and
 test('accepts the 25 MB boundary', async () => {
 	const value = await harness();
 	const item = value.core.items.create(itemInput);
-	const data = Buffer.alloc(25 * 1024 * 1024);
-	data.write('%PDF-1.4');
+	const data = paddedPdf(25 * 1024 * 1024);
 	const document = await value.core.documents.addToItem(
 		item.id,
 		'Manual',

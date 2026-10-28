@@ -5,6 +5,7 @@ import { eq, sql } from 'drizzle-orm';
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
 import { documents, items, storedFiles } from '../schema';
 import { DomainError } from './errors';
+import { validateFile } from './validate-file';
 
 const maxSize = 25 * 1024 * 1024;
 type StoredFile = typeof storedFiles.$inferSelect;
@@ -69,8 +70,8 @@ export class Files {
 		}
 		if (type === 'image/heic') {
 			try {
-				const { default: convert } = await import('heic-convert');
-				data = Buffer.from(await convert({ buffer: data, format: 'JPEG', quality: 0.9 }));
+				const { convertHeic } = await import('./heic');
+				data = Buffer.from(convertHeic(data));
 				type = 'image/jpeg';
 			} catch {
 				throw new DomainError(
@@ -85,6 +86,7 @@ export class Files {
 				);
 			}
 		}
+		await validateFile(data, type);
 		const id = randomUUID();
 		const extension = type === 'application/pdf' ? 'pdf' : type === 'image/png' ? 'png' : 'jpg';
 		const file: StoredFile = {
