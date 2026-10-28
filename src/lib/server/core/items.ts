@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
 import { itemCategories, type ItemInput } from '../../items';
-import { items, serviceRecordItems } from '../schema';
+import { documents, items, serviceRecordItems } from '../schema';
 import { DomainError } from './errors';
+import type { Files } from './files';
 
 function calendarDate(value: string | null | undefined, label: string) {
 	if (!value) return null;
@@ -39,7 +40,8 @@ function fields(input: ItemInput) {
 export class Items {
 	constructor(
 		private database: NodeSQLiteDatabase,
-		private clock: () => Date
+		private clock: () => Date,
+		private files: Files
 	) {}
 
 	create(input: ItemInput) {
@@ -48,6 +50,17 @@ export class Items {
 			.values({ id: randomUUID(), ...fields(input) })
 			.returning()
 			.get();
+	}
+
+	async createWithPhoto(input: ItemInput, upload: File) {
+		const values = fields(input);
+		return this.files.save(upload, true, (file) =>
+			this.database
+				.insert(items)
+				.values({ id: randomUUID(), ...values, photoId: file.id })
+				.returning()
+				.get()
+		);
 	}
 
 	update(id: string, input: ItemInput) {
@@ -88,9 +101,34 @@ export class Items {
 			.all();
 	}
 
+	async setPhoto(id: string, upload: File) {
+		this.requireItem(id);
+		return this.files.save(upload, true, (file) => {
+			this.requireItem(id);
+			return this.database
+				.update(items)
+				.set({ photoId: file.id })
+				.where(eq(items.id, id))
+				.returning()
+				.get()!;
+		});
+	}
+
+	removePhoto(id: string) {
+		this.requireItem(id);
+		this.database.update(items).set({ photoId: null }).where(eq(items.id, id)).run();
+		this.files.removeUnused();
+	}
+
+	openPhoto(id: string) {
+		const item = this.requireItem(id);
+		if (!item.photoId) throw new DomainError('document-not-found', 'Photo not found.');
+		return this.files.open(item.photoId);
+	}
+
 	delete(id: string) {
 		this.database.transaction(() => {
-			if (!this.get(id)) throw new DomainError('item-not-found', 'Item not found.');
+			this.requireItem(id);
 			if (
 				this.database
 					.select({ id: serviceRecordItems.serviceRecordId })
@@ -103,7 +141,15 @@ export class Items {
 					'This Item has Service Records and cannot be deleted.'
 				);
 			}
+			this.database.delete(documents).where(eq(documents.itemId, id)).run();
 			this.database.delete(items).where(eq(items.id, id)).run();
 		});
+		this.files.removeUnused();
+	}
+
+	private requireItem(id: string) {
+		const item = this.get(id);
+		if (!item) throw new DomainError('item-not-found', 'Item not found.');
+		return item;
 	}
 }

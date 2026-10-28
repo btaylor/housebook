@@ -4,6 +4,8 @@ import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
 import { contractors, houses, invites, members, sessions, signInAttempts } from '../schema';
 import { currencies } from './currencies';
 import { DomainError } from './errors';
+import { Documents } from './documents';
+import { Files } from './files';
 import { Items } from './items';
 import { hashPassword, verifyPassword } from './passwords';
 import { ServiceRecords } from './service-records';
@@ -176,6 +178,7 @@ export class Housebook {
 	readonly contractors: Contractors;
 	readonly items: Items;
 	readonly serviceRecords: ServiceRecords;
+	readonly documents: Documents;
 	constructor(
 		readonly database: NodeSQLiteDatabase,
 		readonly dataDirectory: string,
@@ -186,7 +189,9 @@ export class Housebook {
 		this.members = new HouseholdMembers(database);
 		this.invites = new Invites(database, clock);
 		this.contractors = new Contractors(database, clock);
-		this.items = new Items(database, clock);
+		const files = new Files(database, dataDirectory);
+		this.items = new Items(database, clock, files);
+		this.documents = new Documents(database, files);
 		this.serviceRecords = new ServiceRecords(database);
 	}
 	serviceRecordOptions(id?: string) {

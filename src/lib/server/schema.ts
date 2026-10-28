@@ -22,8 +22,37 @@ export const items = sqliteTable('items', {
 	installDate: text(),
 	warrantyEndDate: text(),
 	notes: text(),
-	retiredDate: text()
+	retiredDate: text(),
+	photoId: text().references(() => storedFiles.id)
 });
+export const storedFiles = sqliteTable('stored_files', {
+	id: text().primaryKey(),
+	originalName: text().notNull(),
+	storedName: text().notNull().unique(),
+	contentType: text().notNull(),
+	size: integer().notNull()
+});
+
+export const documents = sqliteTable(
+	'documents',
+	{
+		id: text().primaryKey(),
+		title: text().notNull(),
+		fileId: text()
+			.notNull()
+			.unique()
+			.references(() => storedFiles.id),
+		itemId: text().references(() => items.id, { onDelete: 'cascade' }),
+		serviceRecordId: text()
+	},
+	(table) => [
+		check(
+			'document_one_owner',
+			sql`(${table.itemId} IS NOT NULL) + (${table.serviceRecordId} IS NOT NULL) = 1`
+		),
+		index('documents_item').on(table.itemId)
+	]
+);
 
 export const houses = sqliteTable(
 	'houses',
