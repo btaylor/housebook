@@ -18,11 +18,9 @@ ENV NODE_ENV=production \
     PORT=3000
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
-COPY --from=build /app/build-cli ./build-cli
 COPY --from=build /app/drizzle ./drizzle
-COPY package.json server.js reset-password ./
-RUN chmod +x /app/reset-password && ln -s /app/reset-password /usr/local/bin/reset-password \
-    && mkdir /data && chown node:node /data
+COPY package.json server.js ./
+RUN mkdir /data && chown node:node /data
 USER node
 VOLUME ["/data"]
 EXPOSE 3000

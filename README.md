@@ -91,10 +91,11 @@ their sign-in lockout. The Member must sign in again with the new password.
 If you are the only Member, or no Member can sign in, run the installer command:
 
 ```sh
-docker exec housebook reset-password morgan@example.com
+docker exec housebook node server.js reset-password morgan@example.com
 ```
 
-With Compose, use `docker compose exec housebook reset-password morgan@example.com`.
+With Compose, use `docker compose exec housebook node server.js reset-password morgan@example.com`.
+The same app entry point serves Housebook by default and runs the reset command without a server.
 The command matches the Member's email without regard to case and prints a reset link.
 An unknown email prints an error and exits unsuccessfully. Treat the printed link like a password.
 Only its hash is stored; save it when it is printed.
@@ -105,10 +106,10 @@ the incoming request's origin. The command has no incoming request and defaults 
 or provide the public address for the command:
 
 ```sh
-docker exec -e HOUSEBOOK_URL=http://housebook.lan:3000 housebook reset-password morgan@example.com
+docker exec -e HOUSEBOOK_URL=http://housebook.lan:3000 housebook node server.js reset-password morgan@example.com
 ```
 
-For local development, build first, then run `node reset-password morgan@example.com`
+For local development, build first, then run `node server.js reset-password morgan@example.com`
 with the same `HOUSEBOOK_DATA_DIR` as the app.
 
 ## Items

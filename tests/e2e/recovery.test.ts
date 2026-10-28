@@ -104,28 +104,39 @@ test('installer command prints a usable sole-Member link and reports unknown ema
 		headers: { origin: app.url, accept: 'text/html' }
 	});
 	const env = { ...process.env, HOUSEBOOK_DATA_DIR: app.dataDirectory, HOUSEBOOK_URL: app.url };
-	const fallback = spawnSync('./reset-password', ['morgan@example.com'], {
-		env: { ...env, HOUSEBOOK_URL: '' },
-		encoding: 'utf8'
-	});
+	const fallback = spawnSync(
+		process.execPath,
+		['server.js', 'reset-password', 'morgan@example.com'],
+		{
+			env: { ...env, HOUSEBOOK_URL: '' },
+			encoding: 'utf8',
+			timeout: 15_000
+		}
+	);
 	expect(fallback.status).toBe(0);
 	expect(new URL(fallback.stdout.trim()).origin).toBe('http://localhost:3000');
 	for (const [args, message] of [
-		[[], 'Usage: reset-password <member-email>'],
+		[[], 'Usage: node server.js reset-password <member-email>'],
 		[['missing@example.com'], 'No Member uses that email address.']
 	] as const) {
-		const result = spawnSync('./reset-password', [...args], {
+		const result = spawnSync(process.execPath, ['server.js', 'reset-password', ...args], {
 			env,
-			encoding: 'utf8'
+			encoding: 'utf8',
+			timeout: 15_000
 		});
 		expect(result.status).toBe(1);
 		expect(result.stderr).toContain(message);
 		expect(result.stdout).toBe('');
 	}
-	const result = spawnSync('./reset-password', [' MORGAN@EXAMPLE.COM '], {
-		env,
-		encoding: 'utf8'
-	});
+	const result = spawnSync(
+		process.execPath,
+		['server.js', 'reset-password', ' MORGAN@EXAMPLE.COM '],
+		{
+			env,
+			encoding: 'utf8',
+			timeout: 15_000
+		}
+	);
 	expect(result.status).toBe(0);
 	const resetUrl = result.stdout.trim();
 	expect(new URL(resetUrl).origin).toBe(app.url);
@@ -138,4 +149,8 @@ test('installer command prints a usable sole-Member link and reports unknown ema
 	await page.getByLabel('Password', { exact: true }).fill(replacement);
 	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 	await expect(page).toHaveURL(/\/items$/);
+	await page.goto(resetUrl);
+	await expect(
+		page.getByRole('heading', { name: 'Reset link unavailable', exact: true })
+	).toBeVisible();
 });

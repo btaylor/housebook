@@ -8,9 +8,28 @@ let housebook: Awaited<ReturnType<typeof openHousebook>> | undefined;
 
 export const init: ServerInit = async () => {
 	if (building) return;
-	housebook = await openHousebook({
+	const resetting = process.argv[2] === 'reset-password';
+	const args = process.argv.slice(3);
+	if (resetting && (args.length !== 1 || !args[0])) {
+		throw new Error('Usage: node server.js reset-password <member-email>');
+	}
+	const runtime = await openHousebook({
 		dataDirectory: process.env.HOUSEBOOK_DATA_DIR ?? '.data'
 	});
+	if (resetting) {
+		try {
+			const reset = runtime.core.auth.createPasswordResetForEmail(
+				args[0],
+				'http://localhost:3000',
+				process.env.HOUSEBOOK_URL
+			);
+			console.info(reset.url);
+		} finally {
+			runtime.close();
+		}
+		return;
+	}
+	housebook = runtime;
 	const code = housebook.core.setup.issueCode();
 	if (code) console.info(`Housebook setup code: ${code}`);
 	process.once('exit', () => housebook?.close());

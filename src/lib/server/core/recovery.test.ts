@@ -29,15 +29,28 @@ afterEach(() => {
 
 test('installer recovery works for the sole Member, stores only a unique hash, and survives restart', async () => {
 	const { harness, core, session } = await setUp();
+	expect(() =>
+		core.auth.createPasswordResetForEmail('missing@example.com', 'http://housebook.lan')
+	).toThrow(
+		expect.objectContaining({
+			code: 'member-not-found',
+			message: 'No Member uses that email address.'
+		})
+	);
 	const reset = core.auth.createPasswordResetForEmail(
 		' MORGAN@EXAMPLE.COM ',
-		'http://housebook.lan'
+		'http://housebook.lan',
+		'https://housebook.example'
 	);
+	expect(new URL(reset.url).origin).toBe('https://housebook.example');
 	const token = tokenOf(reset.url);
 	expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
-	expect(
-		core.auth.createPasswordResetForEmail(session.member.email, 'http://housebook.lan').url
-	).not.toBe(reset.url);
+	const second = core.auth.createPasswordResetForEmail(
+		session.member.email,
+		'http://housebook.lan'
+	);
+	expect(second.url).not.toBe(reset.url);
+	expect(new URL(second.url).origin).toBe('http://housebook.lan');
 	expect(core.database.select().from(passwordResets).all()).toContainEqual({
 		id: reset.id,
 		tokenHash: createHash('sha256').update(token).digest('hex'),
@@ -92,9 +105,6 @@ test('Members issue links only for other Members, using the configured URL or re
 			expect.objectContaining({ code })
 		);
 	}
-	expect(() =>
-		core.auth.createPasswordResetForEmail('missing@example.com', 'http://housebook.lan')
-	).toThrow(expect.objectContaining({ code: 'member-not-found' }));
 });
 
 test('redemption ends every target session and clears lockout and failed attempts, without affecting others', async () => {
