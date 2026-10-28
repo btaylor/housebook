@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { DomainError } from '../../../lib/server/core';
-import { sessionCookie } from '../../../lib/server/session-cookie';
+import { requireSession, sessionCookie } from '../../../lib/server/session-cookie';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals, cookies }) => ({
@@ -47,15 +47,20 @@ export const actions: Actions = {
 		}
 		return { section: 'members', removed: true };
 	},
-	createInvite: ({ locals, url }) => ({
-		invite: locals.housebook.invites.create(
-			locals.member!.id,
-			url.origin,
-			process.env.HOUSEBOOK_URL
-		)
-	}),
-	revokeInvite: async ({ locals, request }) => {
+	createInvite: (event) => {
+		const { member } = requireSession(event);
+		return {
+			invite: event.locals.housebook.invites.create(
+				member.id,
+				event.url.origin,
+				process.env.HOUSEBOOK_URL
+			)
+		};
+	},
+	revokeInvite: async (event) => {
+		const { locals, request } = event;
 		const form = await request.formData();
+		requireSession(event);
 		locals.housebook.invites.revoke(String(form.get('id') ?? ''));
 		return { revoked: true };
 	},

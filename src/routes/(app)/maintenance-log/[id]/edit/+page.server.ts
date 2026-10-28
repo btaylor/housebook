@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { DomainError } from '../../../../../lib/server/core';
 import { serviceRecordFormValues } from '../../../../../lib/server/service-record-form';
+import { requireSession } from '../../../../../lib/server/session-cookie';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals, params }) => ({
@@ -8,8 +9,10 @@ export const load: PageServerLoad = ({ locals, params }) => ({
 });
 
 export const actions: Actions = {
-	default: async ({ locals, params, request }) => {
+	default: async (event) => {
+		const { locals, params, request } = event;
 		const values = serviceRecordFormValues(await request.formData());
+		requireSession(event);
 		try {
 			locals.housebook.serviceRecords.update(params.id, values);
 		} catch (cause) {
