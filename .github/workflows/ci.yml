@@ -57,3 +57,10 @@ jobs:
           done
           docker logs housebook
           exit 1
+      - name: Run installer recovery command offline
+        run: |
+          if docker exec housebook reset-password missing@example.com > reset-command-output.txt 2>&1; then
+            printf 'An unknown Member must not receive a reset link.\n'
+            exit 1
+          fi
+          grep -Fx 'No Member uses that email address.' reset-command-output.txt
