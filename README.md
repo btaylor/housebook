@@ -131,6 +131,10 @@ Main photos accept images only. HEIC uploads become JPEGs using bundled pure Jav
 no system image libraries or runtime network access are required.
 Stored files use generated names under the data directory's `files/` folder.
 Deleting a Document or replacing/removing a photo removes the old stored file.
+Retire an Item that has left the House to hide it from the default list while keeping its photo,
+Documents, and Service Records. Use **Show Retired** to find it, then **Un-Retire Item** to return it
+to the default list. **Delete Item** permanently removes an Item and its photo, Documents, and
+stored files after confirmation. Items with Service Records cannot be deleted; Retire them instead.
 The built server accepts request bodies up to 27 MB to allow multipart overhead;
 `BODY_SIZE_LIMIT` overrides that transport limit. Set reverse-proxy limits to at least 27 MB.
 

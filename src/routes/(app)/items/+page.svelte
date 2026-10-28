@@ -18,6 +18,7 @@
 </div>
 
 <form method="GET" action={resolve('/(app)/items')} class="item-filters" role="search">
+	{#if data.includeRetired}<input type="hidden" name="retired" value="1" />{/if}
 	<div>
 		<label for="search">Search by name</label>
 		<input id="search" type="search" name="search" value={data.search} placeholder="Find an Item" />
@@ -34,6 +35,21 @@
 	<button type="submit" class="secondary">Find Items</button>
 	{#if data.search || data.category}<a href={resolve('/(app)/items')}>Clear filters</a>{/if}
 </form>
+<form method="GET" action={resolve('/(app)/items')} class="retired-filter">
+	<input type="hidden" name="search" value={data.search} />
+	<input type="hidden" name="category" value={data.category} />
+	<label>
+		<input
+			type="checkbox"
+			name="retired"
+			value="1"
+			checked={data.includeRetired}
+			onchange={(event) => event.currentTarget.form?.requestSubmit()}
+		/>
+		Show Retired
+	</label>
+	<noscript><button class="secondary" type="submit">Apply</button></noscript>
+</form>
 
 {#if data.items.length}
 	<p class="hint" role="status">{data.items.length} {data.items.length === 1 ? 'Item' : 'Items'}</p>
@@ -45,6 +61,7 @@
 					<div>
 						<h2>{item.name}</h2>
 						<p>{item.category}{item.location ? ` · ${item.location}` : ''}</p>
+						{#if item.retiredDate}<span class="coming-soon">Retired</span>{/if}
 					</div>
 					<span class="item-arrow" aria-hidden="true">→</span>
 				</a>
@@ -59,7 +76,10 @@
 			<p>Try another name or category, or clear your filters.</p>
 		{:else}
 			<h2>Your House’s story starts here.</h2>
-			<p>Add your first Item to keep its details and warranty dates together.</p>
+			<p>
+				Add an Item to keep its details and warranty dates together, or show Retired to find an old
+				Item.
+			</p>
 		{/if}
 	</section>
 {/if}

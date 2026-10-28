@@ -102,6 +102,26 @@ export class Items {
 			.all();
 	}
 
+	retire(id: string) {
+		const item = this.requireItem(id);
+		return this.database
+			.update(items)
+			.set({ retiredDate: item.retiredDate ?? this.clock().toISOString().slice(0, 10) })
+			.where(eq(items.id, id))
+			.returning()
+			.get()!;
+	}
+
+	unretire(id: string) {
+		this.requireItem(id);
+		return this.database
+			.update(items)
+			.set({ retiredDate: null })
+			.where(eq(items.id, id))
+			.returning()
+			.get()!;
+	}
+
 	async setPhoto(id: string, upload: File, authorize?: () => void) {
 		this.requireItem(id);
 		return this.files.save(upload, true, (file) => {

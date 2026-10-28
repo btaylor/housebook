@@ -378,17 +378,20 @@ input::placeholder {
 	color: var(--muted);
 	overflow-wrap: anywhere;
 }
-.archive-filter {
+.archive-filter,
+.retired-filter {
 	margin-top: 1.75rem;
 }
-.archive-filter label {
+.archive-filter label,
+.retired-filter label {
 	display: flex;
 	align-items: center;
 	gap: 0.65rem;
 	min-height: 3rem;
 	width: fit-content;
 }
-.archive-filter input {
+.archive-filter input,
+.retired-filter input[type='checkbox'] {
 	width: 1.25rem;
 	height: 1.25rem;
 	min-height: 0;
@@ -553,6 +556,9 @@ input::placeholder {
 }
 textarea {
 	resize: vertical;
+}
+.item-lifecycle button {
+	margin-top: 1rem;
 }
 .item-details dl {
 	display: grid;

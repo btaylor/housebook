@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { DomainError } from '../../../../lib/server/core';
 import { photoFromForm } from '../../../../lib/server/item-form';
 import { requireSession } from '../../../../lib/server/session-cookie';
@@ -15,6 +15,42 @@ export const load: PageServerLoad = ({ locals, params }) => {
 };
 
 export const actions: Actions = {
+	retire: (event) => {
+		const { locals, params } = event;
+		requireSession(event);
+		try {
+			locals.housebook.items.retire(params.id);
+			return { message: 'Item Retired. Its history and Documents are kept.' };
+		} catch (cause) {
+			if (cause instanceof DomainError) error(404, cause.message);
+			throw cause;
+		}
+	},
+	unretire: (event) => {
+		const { locals, params } = event;
+		requireSession(event);
+		try {
+			locals.housebook.items.unretire(params.id);
+			return { message: 'Item un-Retired. It is back in the default Item list.' };
+		} catch (cause) {
+			if (cause instanceof DomainError) error(404, cause.message);
+			throw cause;
+		}
+	},
+	delete: (event) => {
+		const { locals, params } = event;
+		requireSession(event);
+		try {
+			locals.housebook.items.delete(params.id);
+		} catch (cause) {
+			if (cause instanceof DomainError) {
+				if (cause.code === 'item-not-found') error(404, cause.message);
+				return fail(400, { error: cause.message });
+			}
+			throw cause;
+		}
+		redirect(303, '/items');
+	},
 	photo: async (event) => {
 		const { locals, params, request } = event;
 		try {
