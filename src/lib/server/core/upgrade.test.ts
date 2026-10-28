@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -14,7 +14,7 @@ function quoteIdentifier(name: string) {
 	return `"${name.replaceAll('"', '""')}"`;
 }
 
-async function seedAndSnapshotPreviousData(database: DatabaseSync) {
+async function seedAndSnapshotPreviousData(database: DatabaseSync, dataDirectory: string) {
 	const tables = database
 		.prepare(
 			`SELECT name FROM sqlite_master WHERE type = 'table'
@@ -33,7 +33,9 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 		tables.join(',') === 'contractors,houses,items,members,sessions,sign_in_attempts' ||
 		tables.join(',') === 'contractors,houses,invites,items,members,sessions,sign_in_attempts' ||
 		tables.join(',') ===
-			'contractors,houses,invites,items,members,service_record_items,service_records,sessions,sign_in_attempts'
+			'contractors,houses,invites,items,members,service_record_items,service_records,sessions,sign_in_attempts' ||
+		tables.join(',') ===
+			'contractors,documents,houses,invites,items,members,service_record_items,service_records,sessions,sign_in_attempts,stored_files'
 	) {
 		const now = Date.parse('2026-01-01T00:00:00Z');
 		database
@@ -109,6 +111,27 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 						('existing-service-record', 'retired-item');
 			`);
 		}
+		if (tables.includes('documents')) {
+			const directory = join(dataDirectory, 'files');
+			mkdirSync(directory);
+			for (const [id, name, contentType] of [
+				['existing-manual-file', 'manual.pdf', 'application/pdf'],
+				['existing-photo-file', 'item-photo.png', 'image/png']
+			]) {
+				const data = readFileSync(resolve('tests/fixtures', name));
+				writeFileSync(join(directory, name), data);
+				database
+					.prepare(
+						'INSERT INTO stored_files (id, originalName, storedName, contentType, size) VALUES (?, ?, ?, ?, ?)'
+					)
+					.run(id, name, name, contentType, data.length);
+			}
+			database.exec(`
+				INSERT INTO documents (id, title, fileId, itemId)
+					VALUES ('existing-manual', 'Boiler manual', 'existing-manual-file', 'current-item');
+				UPDATE items SET photoId = 'existing-photo-file' WHERE id = 'current-item';
+			`);
+		}
 	} else {
 		throw new Error(`Add representative previous-version fixtures for: ${tables.join(', ')}`);
 	}
@@ -139,7 +162,7 @@ test('preserves existing data and a pre-migration backup when upgrading the pack
 			migrate(drizzle({ client: database }), {
 				migrationsFolder: harness.migrationsDirectory
 			});
-			previousData = await seedAndSnapshotPreviousData(database);
+			previousData = await seedAndSnapshotPreviousData(database, harness.dataDirectory);
 			expect(database.prepare('SELECT count(*) AS count FROM __drizzle_migrations').get()).toEqual({
 				count: migrations.length - 1
 			});
@@ -173,6 +196,23 @@ test('preserves existing data and a pre-migration backup when upgrading the pack
 			contractorId: 'active-contractor',
 			items: [{ id: 'current-item' }, { id: 'retired-item' }]
 		});
+		expect(harness.core.documents.listForItem('current-item')).toEqual([
+			{
+				id: 'existing-manual',
+				title: 'Boiler manual',
+				originalName: 'manual.pdf',
+				contentType: 'application/pdf',
+				size: readFileSync(resolve('tests/fixtures/manual.pdf')).length
+			}
+		]);
+		for (const [opened, fixture] of [
+			[harness.core.documents.open('existing-manual'), 'manual.pdf'],
+			[harness.core.items.openPhoto('current-item'), 'item-photo.png']
+		] as const) {
+			expect(Buffer.concat(await opened.stream.toArray())).toEqual(
+				readFileSync(resolve('tests/fixtures', fixture))
+			);
+		}
 
 		const backups = readdirSync(harness.dataDirectory).filter(
 			(name) => name.startsWith('housebook.pre-migration-') && name.endsWith('.sqlite')
