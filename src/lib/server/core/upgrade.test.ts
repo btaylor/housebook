@@ -25,6 +25,14 @@ function seedAndSnapshotPreviousData(database: DatabaseSync) {
 		database.exec('CREATE TABLE upgrade_fixture (value TEXT NOT NULL);');
 		database.prepare('INSERT INTO upgrade_fixture VALUES (?)').run('keep this existing row');
 		tables.push('upgrade_fixture');
+	} else if (tables.join(',') === 'houses,members,sessions') {
+		database.exec(`
+			INSERT INTO houses (name, currency, createdAt) VALUES ('Willow House', 'USD', 1760000000000);
+			INSERT INTO members (id, name, email, passwordHash, createdAt)
+				VALUES ('morgan', 'Morgan', 'morgan@example.com', 'stored-password-hash', 1760000000000);
+			INSERT INTO sessions (tokenHash, memberId, createdAt, lastSeenAt, expiresAt)
+				VALUES ('stored-token-hash', 'morgan', 1760000000000, 1760000000000, 1762592000000);
+		`);
 	} else {
 		throw new Error(`Add representative previous-version fixtures for: ${tables.join(', ')}`);
 	}

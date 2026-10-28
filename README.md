@@ -1,7 +1,8 @@
 # Housebook
 
 A self-hosted, shared record of one House. Create your House, sign in, and move between
-Items, Maintenance Log, Contractors, and Settings. Record-management screens are placeholders.
+Items, Maintenance Log, Contractors, and Settings. Keep Contractor contact details and Archive
+those you no longer use. Item and Maintenance Log record-management screens are placeholders.
 
 ## Install
 
