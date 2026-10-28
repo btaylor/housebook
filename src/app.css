@@ -54,7 +54,8 @@ textarea {
 button,
 a,
 input,
-select {
+select,
+textarea {
 	-webkit-tap-highlight-color: transparent;
 }
 button {
@@ -464,6 +465,137 @@ input::placeholder {
 	background: var(--accent-soft);
 	font-size: 0.85rem;
 }
+.page-heading {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.5rem;
+}
+.page-heading > div {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+.button-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-decoration: none;
+	width: auto;
+	margin: 0;
+}
+.item-filters {
+	display: grid;
+	gap: 1rem;
+	align-items: end;
+	margin: 2rem 0 1rem;
+}
+.item-filters label {
+	margin-top: 0;
+}
+.item-filters a {
+	font-size: 0.85rem;
+	padding: 0.75rem 0;
+}
+.item-list {
+	list-style: none;
+	padding: 0;
+	margin: 1rem 0;
+	display: grid;
+	gap: 0.75rem;
+}
+.item-list a {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	border: 1px solid var(--line);
+	border-radius: 0.8rem;
+	padding: 1.25rem;
+	background: var(--surface);
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+.item-list a:hover {
+	border-color: var(--accent);
+}
+.item-list a > div {
+	min-width: 0;
+}
+.item-list h2 {
+	font-size: 1.05rem;
+}
+.item-list p {
+	color: var(--muted);
+	font-size: 0.85rem;
+	margin-top: 0.2rem;
+}
+.item-list-icon {
+	flex-shrink: 0;
+	width: 2.5rem;
+	height: 2.5rem;
+	padding: 0.6rem;
+	border-radius: 0.6rem;
+	background: var(--accent-soft);
+	color: var(--accent);
+}
+.item-arrow {
+	margin-left: auto;
+	color: var(--accent);
+}
+.item-form,
+.item-details {
+	max-width: 42rem;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 1rem;
+	padding: 1.5rem;
+	margin-top: 2rem;
+}
+textarea {
+	resize: vertical;
+}
+.item-details dl {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+	column-gap: 1.5rem;
+	margin: 1.25rem 0 0;
+	font-size: 0.9rem;
+}
+.item-details dt,
+.item-details dd {
+	margin: 0;
+	padding: 0.65rem 0;
+	border-bottom: 1px solid var(--line);
+	overflow-wrap: anywhere;
+}
+.item-details dt {
+	color: var(--muted);
+}
+.warranty-summary {
+	margin: 1.5rem 0;
+	padding-bottom: 1.5rem;
+	border-bottom: 1px solid var(--line);
+}
+.warranty-status {
+	display: inline-block;
+	margin-top: 0.75rem;
+	font-size: 0.85rem;
+	border-radius: 1rem;
+	padding: 0.25rem 0.75rem;
+	background: var(--accent-soft);
+	color: var(--accent);
+	font-weight: 600;
+}
+.warranty-status.ended {
+	background: var(--error-bg);
+	color: var(--error);
+}
+.item-notes {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font-size: 0.9rem;
+	margin-top: 0.75rem;
+}
 
 @media (min-width: 48rem) {
 	.welcome {
@@ -509,5 +641,8 @@ input::placeholder {
 	}
 	.settings-card {
 		max-width: 38rem;
+	}
+	.item-filters {
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto auto;
 	}
 }

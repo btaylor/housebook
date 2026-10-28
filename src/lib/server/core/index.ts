@@ -3,37 +3,13 @@ import { and, count, desc, DrizzleQueryError, eq, gt, isNull, lte, sql } from 'd
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
 import { contractors, houses, members, sessions, signInAttempts } from '../schema';
 import { currencies } from './currencies';
+import { DomainError } from './errors';
+import { Items } from './items';
 import { hashPassword, verifyPassword } from './passwords';
 
 export { currencies } from './currencies';
 
-export type DomainErrorCode =
-	| 'setup-complete'
-	| 'invalid-setup-code'
-	| 'invalid-house-name'
-	| 'invalid-currency'
-	| 'invalid-member-name'
-	| 'invalid-email'
-	| 'password-too-short'
-	| 'invalid-credentials'
-	| 'sign-in-locked'
-	| 'session-required'
-	| 'email-in-use'
-	| 'incorrect-current-password'
-	| 'invalid-contractor-name'
-	| 'invalid-contractor-phone'
-	| 'invalid-contractor-email'
-	| 'contractor-not-found';
-
-export class DomainError extends Error {
-	constructor(
-		readonly code: DomainErrorCode,
-		message: string
-	) {
-		super(message);
-		this.name = 'DomainError';
-	}
-}
+export { DomainError, type DomainErrorCode } from './errors';
 
 class Contractors {
 	constructor(
@@ -191,6 +167,7 @@ export class Housebook {
 	readonly setup: Setup;
 	readonly auth: Auth;
 	readonly contractors: Contractors;
+	readonly items: Items;
 	constructor(
 		readonly database: NodeSQLiteDatabase,
 		readonly dataDirectory: string,
@@ -199,6 +176,7 @@ export class Housebook {
 		this.auth = new Auth(database, clock);
 		this.setup = new Setup(database, clock);
 		this.contractors = new Contractors(database, clock);
+		this.items = new Items(database, clock);
 	}
 
 	renameHouse(token: string, name: string) {

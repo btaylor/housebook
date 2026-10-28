@@ -27,7 +27,10 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 		database.exec('CREATE TABLE upgrade_fixture (value TEXT NOT NULL);');
 		database.prepare('INSERT INTO upgrade_fixture VALUES (?)').run('keep this existing row');
 		tables.push('upgrade_fixture');
-	} else if (tables.join(',') === 'contractors,houses,members,sessions') {
+	} else if (
+		tables.join(',') === 'contractors,houses,members,sessions' ||
+		tables.join(',') === 'contractors,houses,members,sessions,sign_in_attempts'
+	) {
 		const now = Date.parse('2026-01-01T00:00:00Z');
 		database
 			.prepare('INSERT INTO houses (name, currency, createdAt) VALUES (?, ?, ?)')
@@ -60,6 +63,14 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 					'contact@example.com', 'Plumbing', 'Boiler service', NULL),
 					('archived-contractor', 'Cedar Roofing', '', '', 'Roofing', 'Old roof', 1760000000000);
 		`);
+		if (tables.includes('sign_in_attempts')) {
+			database
+				.prepare('INSERT INTO sign_in_attempts (memberId, attemptedAt) VALUES (?, ?)')
+				.run('existing-member', now);
+			database
+				.prepare('UPDATE members SET signInLockedUntil = ? WHERE id = ?')
+				.run(now - 1, 'existing-member');
+		}
 	} else {
 		throw new Error(`Add representative previous-version fixtures for: ${tables.join(', ')}`);
 	}
