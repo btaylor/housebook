@@ -73,3 +73,15 @@ export const contractors = sqliteTable('contractors', {
 	notes: text().notNull().default(''),
 	archivedAt: integer({ mode: 'timestamp_ms' })
 });
+
+export const invites = sqliteTable('invites', {
+	id: text().primaryKey(),
+	tokenHash: text().notNull().unique(),
+	createdBy: text()
+		.notNull()
+		.references(() => members.id),
+	createdAt: integer({ mode: 'timestamp_ms' }).notNull(),
+	expiresAt: integer({ mode: 'timestamp_ms' }).notNull(),
+	usedAt: integer({ mode: 'timestamp_ms' }),
+	revokedAt: integer({ mode: 'timestamp_ms' })
+});

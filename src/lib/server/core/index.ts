@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import { and, count, desc, DrizzleQueryError, eq, gt, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, count, desc, DrizzleQueryError, eq, gt, isNull, lte, sql } from 'drizzle-orm';
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
-import { contractors, houses, members, sessions, signInAttempts } from '../schema';
+import { contractors, houses, invites, members, sessions, signInAttempts } from '../schema';
 import { currencies } from './currencies';
 import { DomainError } from './errors';
 import { Items } from './items';
@@ -126,17 +126,21 @@ export interface ContractorInput {
 	notes?: string;
 }
 
-interface SetupInput {
-	code: string;
-	houseName: string;
-	currency: string;
+interface MemberInput {
 	memberName: string;
 	email: string;
 	password: string;
 	userAgent?: string;
 }
 
+interface SetupInput extends MemberInput {
+	code: string;
+	houseName: string;
+	currency: string;
+}
+
 const sessionLifetime = 30 * 24 * 60 * 60 * 1000;
+const inviteLifetime = 7 * 24 * 60 * 60 * 1000;
 const signInWindow = 15 * 60 * 1000;
 const sqliteConstraintUnique = 2067;
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
@@ -166,6 +170,8 @@ function houseName(name: string) {
 export class Housebook {
 	readonly setup: Setup;
 	readonly auth: Auth;
+	readonly members: HouseholdMembers;
+	readonly invites: Invites;
 	readonly contractors: Contractors;
 	readonly items: Items;
 	constructor(
@@ -175,6 +181,8 @@ export class Housebook {
 	) {
 		this.auth = new Auth(database, clock);
 		this.setup = new Setup(database, clock);
+		this.members = new HouseholdMembers(database);
+		this.invites = new Invites(database, clock);
 		this.contractors = new Contractors(database, clock);
 		this.items = new Items(database, clock);
 	}
@@ -243,6 +251,127 @@ class Setup {
 			!timingSafeEqual(Buffer.from(tokenHash(code)), Buffer.from(tokenHash(this.#code)))
 		) {
 			throw new DomainError('invalid-setup-code', 'Enter the setup code from the server logs.');
+		}
+	}
+}
+
+class HouseholdMembers {
+	constructor(private database: NodeSQLiteDatabase) {}
+
+	list(): Member[] {
+		return this.database
+			.select(memberFields)
+			.from(members)
+			.orderBy(asc(members.createdAt), asc(members.id))
+			.all();
+	}
+}
+
+class Invites {
+	constructor(
+		private database: NodeSQLiteDatabase,
+		private clock: () => Date
+	) {}
+
+	create(memberId: string, requestOrigin: string, housebookUrl?: string) {
+		if (
+			!this.database.select({ id: members.id }).from(members).where(eq(members.id, memberId)).get()
+		) {
+			throw new DomainError('member-not-found', 'Member not found.');
+		}
+		const token = randomBytes(32).toString('base64url');
+		const url = new URL(`/invite/${token}`, housebookUrl || requestOrigin).href;
+		const now = this.clock();
+		const invite = {
+			id: randomUUID(),
+			createdBy: memberId,
+			createdAt: now,
+			expiresAt: new Date(now.getTime() + inviteLifetime)
+		};
+		this.database
+			.insert(invites)
+			.values({ ...invite, tokenHash: tokenHash(token) })
+			.run();
+		return { ...invite, url };
+	}
+
+	list() {
+		return this.database
+			.select({
+				id: invites.id,
+				createdBy: invites.createdBy,
+				createdAt: invites.createdAt,
+				expiresAt: invites.expiresAt
+			})
+			.from(invites)
+			.where(this.unused())
+			.orderBy(asc(invites.createdAt), asc(invites.id))
+			.all();
+	}
+
+	revoke(id: string) {
+		this.database.update(invites).set({ revokedAt: this.clock() }).where(eq(invites.id, id)).run();
+	}
+
+	isValid(token: string) {
+		return this.find(token) !== undefined;
+	}
+
+	async redeem(token: string, input: MemberInput): Promise<Session> {
+		this.requireInvite(token);
+		const details = normalizeProfile(input.memberName, input.email);
+		validatePassword(input.password);
+		this.checkEmail(details.email);
+		const passwordHash = await hashPassword(input.password);
+		return this.database.transaction(() => {
+			const invite = this.requireInvite(token);
+			this.checkEmail(details.email);
+			const now = this.clock();
+			const member = { id: randomUUID(), ...details };
+			this.database
+				.insert(members)
+				.values({ ...member, passwordHash, createdAt: now })
+				.run();
+			this.database.update(invites).set({ usedAt: now }).where(eq(invites.id, invite.id)).run();
+			return createSession(this.database, this.clock, member, input.userAgent);
+		});
+	}
+
+	private unused() {
+		return and(
+			isNull(invites.usedAt),
+			isNull(invites.revokedAt),
+			gt(invites.expiresAt, this.clock())
+		);
+	}
+
+	private find(token: string) {
+		return this.database
+			.select({ id: invites.id })
+			.from(invites)
+			.where(and(eq(invites.tokenHash, tokenHash(token)), this.unused()))
+			.get();
+	}
+
+	private requireInvite(token: string) {
+		const invite = this.find(token);
+		if (!invite)
+			throw new DomainError(
+				'invalid-invite',
+				'This Invite is invalid, expired, or no longer available. Ask a Member for a new Invite.'
+			);
+		return invite;
+	}
+
+	private checkEmail(email: string) {
+		if (
+			this.database
+				.select({ id: members.id })
+				.from(members)
+				.where(sql`lower(${members.email}) = ${email}`)
+				.get()
+		) {
+			throw new DomainError('email-in-use', 'A Member already uses this email address.');
 		}
 	}
 }

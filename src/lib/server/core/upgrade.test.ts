@@ -29,7 +29,8 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 		tables.push('upgrade_fixture');
 	} else if (
 		tables.join(',') === 'contractors,houses,members,sessions' ||
-		tables.join(',') === 'contractors,houses,members,sessions,sign_in_attempts'
+		tables.join(',') === 'contractors,houses,members,sessions,sign_in_attempts' ||
+		tables.join(',') === 'contractors,houses,items,members,sessions,sign_in_attempts'
 	) {
 		const now = Date.parse('2026-01-01T00:00:00Z');
 		database
@@ -70,6 +71,16 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 			database
 				.prepare('UPDATE members SET signInLockedUntil = ? WHERE id = ?')
 				.run(now - 1, 'existing-member');
+		}
+		if (tables.includes('items')) {
+			database.exec(`
+				INSERT INTO items (id, name, category, location, make, model, serialNumber,
+					installDate, warrantyEndDate, notes, retiredDate)
+					VALUES ('current-item', 'Boiler', 'HVAC', 'Basement', 'Willow', 'B1', '123',
+						'2024-01-01', '2029-01-01', 'Annual service', NULL),
+						('retired-item', 'Old boiler', 'HVAC', 'Basement', 'Cedar', 'B0', '456',
+						'2010-01-01', '2015-01-01', 'Replaced', '2024-01-01');
+			`);
 		}
 	} else {
 		throw new Error(`Add representative previous-version fixtures for: ${tables.join(', ')}`);
