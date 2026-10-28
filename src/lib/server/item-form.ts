@@ -1,5 +1,11 @@
 import type { ItemInput } from '../items';
 
+export function photoFromForm(form: FormData) {
+	const camera = form.get('cameraPhoto');
+	const upload = form.get('photo');
+	return camera instanceof File && camera.name ? camera : upload instanceof File ? upload : null;
+}
+
 export function itemFormValues(form: FormData): ItemInput {
 	return {
 		name: String(form.get('name') ?? ''),

@@ -1,13 +1,20 @@
 <script lang="ts">
 	import { itemCategories, type ItemInput } from './items';
+	import PhotoInput from './PhotoInput.svelte';
 	let {
 		values,
 		message,
-		submitLabel
-	}: { values: ItemInput; message?: string; submitLabel: string } = $props();
+		submitLabel,
+		includePhoto = false
+	}: {
+		values: ItemInput;
+		message?: string;
+		submitLabel: string;
+		includePhoto?: boolean;
+	} = $props();
 </script>
 
-<form method="POST" class="item-form">
+<form method="POST" enctype="multipart/form-data" class="item-form">
 	{#if message}<p class="form-error" role="alert">{message}</p>{/if}
 	<p class="hint">Name and category are required. All other details are optional.</p>
 	<label for="name">Name</label>
@@ -55,5 +62,11 @@
 	</fieldset>
 	<label for="notes">Notes</label>
 	<textarea id="notes" name="notes" rows="5" value={values.notes ?? ''}></textarea>
+	{#if includePhoto}
+		<fieldset>
+			<legend>Main photo</legend>
+			<PhotoInput />
+		</fieldset>
+	{/if}
 	<button class="primary" type="submit">{submitLabel}</button>
 </form>

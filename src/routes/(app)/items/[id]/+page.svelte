@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ServiceRecordList from '../../../../lib/ServiceRecordList.svelte';
+	import PhotoInput from '../../../../lib/PhotoInput.svelte';
 	import type { PageProps } from './$types';
-	let { data }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 </script>
 
 <svelte:head><title>{data.item.name} · Housebook</title></svelte:head>
@@ -17,6 +18,68 @@
 		>Edit Item</a
 	>
 </div>
+{#if form?.error}<p class="form-error upload-feedback" role="alert">{form.error}</p>{/if}
+{#if form?.message}<p class="form-success upload-feedback" role="status">{form.message}</p>{/if}
+<section class="item-details">
+	<h2>Main photo</h2>
+	{#if data.item.photoId}
+		<img
+			class="item-photo"
+			src={`${resolve('/(app)/items/[id]/photo', { id: data.item.id })}?v=${data.item.photoId}`}
+			alt={`Main photo of ${data.item.name}`}
+		/>
+		<form method="POST" action="?/removePhoto">
+			<button class="secondary" type="submit">Remove photo</button>
+		</form>
+	{:else}
+		<p class="hint">No photo recorded.</p>
+	{/if}
+	<details class="photo-controls">
+		<summary>{data.item.photoId ? 'Replace photo' : 'Add photo'}</summary>
+		<form method="POST" action="?/photo" enctype="multipart/form-data">
+			<PhotoInput />
+			<button class="primary" type="submit">Save photo</button>
+		</form>
+	</details>
+</section>
+<section class="item-details">
+	<h2>Documents</h2>
+	{#if data.documents.length}
+		<ul class="document-list">
+			{#each data.documents as document (document.id)}
+				<li>
+					<a href={resolve('/(app)/documents/[id]', { id: document.id })}>{document.title}</a>
+					<p class="hint">
+						{document.originalName} · {document.contentType} · {(
+							document.size /
+							1024 /
+							1024
+						).toFixed(2)} MB
+					</p>
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<p class="hint">No Documents attached.</p>
+	{/if}
+	<details class="photo-controls">
+		<summary>Attach Document</summary>
+		<form method="POST" action="?/document" enctype="multipart/form-data">
+			<label for="document-title">Document title</label>
+			<input id="document-title" name="title" value={form?.title ?? ''} required />
+			<label for="document-upload">Document</label>
+			<input
+				id="document-upload"
+				name="document"
+				type="file"
+				accept="application/pdf,image/jpeg,image/png,image/heic,.heic"
+				required
+			/>
+			<p class="hint">PDF, JPEG, PNG, or HEIC. Up to 25 MB.</p>
+			<button class="primary" type="submit">Attach Document</button>
+		</form>
+	</details>
+</section>
 <section class="item-details">
 	<h2>Item details</h2>
 	<dl>
