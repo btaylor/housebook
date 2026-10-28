@@ -10,6 +10,8 @@ export type DomainErrorCode =
 	| 'invalid-password-reset'
 	| 'cannot-reset-self'
 	| 'member-not-found'
+	| 'last-member'
+	| 'member-removed'
 	| 'invalid-credentials'
 	| 'sign-in-locked'
 	| 'session-required'

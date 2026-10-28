@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { DomainError } from '../../../lib/server/core';
-import { sessionCookie } from '../../../lib/server/session-cookie';
+import { requireSession, sessionCookie } from '../../../lib/server/session-cookie';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals, cookies }) => ({
@@ -31,15 +31,36 @@ export const actions: Actions = {
 			return formError(error, 'members');
 		}
 	},
-	createInvite: ({ locals, url }) => ({
-		invite: locals.housebook.invites.create(
-			locals.member!.id,
-			url.origin,
-			process.env.HOUSEBOOK_URL
-		)
-	}),
-	revokeInvite: async ({ locals, request }) => {
+	removeMember: async ({ locals, cookies, request, url }) => {
 		const form = await request.formData();
+		try {
+			locals.housebook.members.remove(
+				cookies.get(sessionCookie) ?? '',
+				String(form.get('id') ?? '')
+			);
+		} catch (error) {
+			return formError(error, 'members');
+		}
+		if (!locals.housebook.auth.validateSession(cookies.get(sessionCookie) ?? '')) {
+			cookies.delete(sessionCookie, { path: '/', secure: url.protocol === 'https:' });
+			redirect(303, '/sign-in');
+		}
+		return { section: 'members', removed: true };
+	},
+	createInvite: (event) => {
+		const { member } = requireSession(event);
+		return {
+			invite: event.locals.housebook.invites.create(
+				member.id,
+				event.url.origin,
+				process.env.HOUSEBOOK_URL
+			)
+		};
+	},
+	revokeInvite: async (event) => {
+		const { locals, request } = event;
+		const form = await request.formData();
+		requireSession(event);
 		locals.housebook.invites.revoke(String(form.get('id') ?? ''));
 		return { revoked: true };
 	},

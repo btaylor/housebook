@@ -1,6 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import { DomainError } from '../../../../lib/server/core';
 import { photoFromForm } from '../../../../lib/server/item-form';
+import { requireSession } from '../../../../lib/server/session-cookie';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals, params }) => {
@@ -14,17 +15,25 @@ export const load: PageServerLoad = ({ locals, params }) => {
 };
 
 export const actions: Actions = {
-	photo: async ({ locals, params, request }) => {
+	photo: async (event) => {
+		const { locals, params, request } = event;
 		try {
 			const form = await request.formData();
-			await locals.housebook.items.setPhoto(params.id, photoFromForm(form) ?? new File([], ''));
+			requireSession(event);
+			await locals.housebook.items.setPhoto(
+				params.id,
+				photoFromForm(form) ?? new File([], ''),
+				() => requireSession(event)
+			);
 			return { message: 'Photo saved.' };
 		} catch (cause) {
 			if (cause instanceof DomainError) return fail(400, { error: cause.message });
 			throw cause;
 		}
 	},
-	removePhoto: ({ locals, params }) => {
+	removePhoto: (event) => {
+		const { locals, params } = event;
+		requireSession(event);
 		try {
 			locals.housebook.items.removePhoto(params.id);
 			return { message: 'Photo removed.' };
@@ -33,15 +42,18 @@ export const actions: Actions = {
 			throw cause;
 		}
 	},
-	document: async ({ locals, params, request }) => {
+	document: async (event) => {
+		const { locals, params, request } = event;
 		const form = await request.formData();
 		const title = String(form.get('title') ?? '');
+		requireSession(event);
 		try {
 			const upload = form.get('document');
 			await locals.housebook.documents.addToItem(
 				params.id,
 				title,
-				upload instanceof File ? upload : new File([], '')
+				upload instanceof File ? upload : new File([], ''),
+				() => requireSession(event)
 			);
 			return { message: 'Document attached.' };
 		} catch (cause) {

@@ -1,9 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { DomainError } from '../../../../lib/server/core';
+import { requireSession } from '../../../../lib/server/session-cookie';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
-	default: async ({ locals, request }) => {
+	default: async (event) => {
+		const { locals, request } = event;
 		const form = await request.formData();
 		const values = {
 			name: String(form.get('name') ?? ''),
@@ -12,6 +14,7 @@ export const actions: Actions = {
 			trade: String(form.get('trade') ?? ''),
 			notes: String(form.get('notes') ?? '')
 		};
+		requireSession(event);
 		let contractor;
 		try {
 			contractor = locals.housebook.contractors.create(values);

@@ -1,5 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import { DomainError } from '../../../../lib/server/core';
+import { requireSession } from '../../../../lib/server/session-cookie';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals, params }) => ({
@@ -7,7 +8,9 @@ export const load: PageServerLoad = ({ locals, params }) => ({
 });
 
 export const actions: Actions = {
-	archive: ({ locals, params }) => {
+	archive: (event) => {
+		const { locals, params } = event;
+		requireSession(event);
 		try {
 			locals.housebook.contractors.archive(params.id);
 		} catch (cause) {
@@ -16,7 +19,9 @@ export const actions: Actions = {
 		}
 		redirect(303, '/contractors');
 	},
-	unarchive: ({ locals, params }) => {
+	unarchive: (event) => {
+		const { locals, params } = event;
+		requireSession(event);
 		try {
 			locals.housebook.contractors.unarchive(params.id);
 		} catch (cause) {

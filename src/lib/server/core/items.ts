@@ -52,15 +52,16 @@ export class Items {
 			.get();
 	}
 
-	async createWithPhoto(input: ItemInput, upload: File) {
+	async createWithPhoto(input: ItemInput, upload: File, authorize?: () => void) {
 		const values = fields(input);
-		return this.files.save(upload, true, (file) =>
-			this.database
+		return this.files.save(upload, true, (file) => {
+			authorize?.();
+			return this.database
 				.insert(items)
 				.values({ id: randomUUID(), ...values, photoId: file.id })
 				.returning()
-				.get()
-		);
+				.get();
+		});
 	}
 
 	update(id: string, input: ItemInput) {
@@ -101,9 +102,10 @@ export class Items {
 			.all();
 	}
 
-	async setPhoto(id: string, upload: File) {
+	async setPhoto(id: string, upload: File, authorize?: () => void) {
 		this.requireItem(id);
 		return this.files.save(upload, true, (file) => {
+			authorize?.();
 			this.requireItem(id);
 			return this.database
 				.update(items)

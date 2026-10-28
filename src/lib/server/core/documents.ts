@@ -17,10 +17,11 @@ export class Documents {
 		private files: Files
 	) {}
 
-	async addToItem(itemId: string, title: string, upload: File) {
+	async addToItem(itemId: string, title: string, upload: File, authorize?: () => void) {
 		const value = documentTitle(title);
 		this.requireItem(itemId);
 		return this.files.save(upload, false, (file) => {
+			authorize?.();
 			this.requireItem(itemId);
 			return this.database
 				.insert(documents)

@@ -101,7 +101,10 @@ export class ServiceRecords {
 		this.database.delete(serviceRecords).where(eq(serviceRecords.id, id)).run();
 	}
 
-	private validate(input: ServiceRecordInput, previous?: { contractorId: string | null }) {
+	private validate(
+		input: ServiceRecordInput,
+		previous?: { contractorId: string | null; memberId: string | null }
+	) {
 		const date = input.date;
 		if (
 			!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
@@ -130,11 +133,12 @@ export class ServiceRecords {
 				throw new DomainError('contractor-archived', 'Choose a Contractor who is not Archived.');
 			}
 		}
-		if (
-			memberId &&
-			!this.database.select({ id: members.id }).from(members).where(eq(members.id, memberId)).get()
-		) {
-			throw new DomainError('member-not-found', 'Member not found.');
+		if (memberId) {
+			const member = this.database.select().from(members).where(eq(members.id, memberId)).get();
+			if (!member) throw new DomainError('member-not-found', 'Member not found.');
+			if (member.removedAt && memberId !== previous?.memberId) {
+				throw new DomainError('member-removed', 'Choose a Member who has not been removed.');
+			}
 		}
 		const cost = input.cost?.trim() ?? '';
 		let costCents: number | null = null;

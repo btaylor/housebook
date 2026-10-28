@@ -73,9 +73,14 @@ export const members = sqliteTable(
 		email: text().notNull(),
 		passwordHash: text().notNull(),
 		signInLockedUntil: integer({ mode: 'timestamp_ms' }),
+		removedAt: integer({ mode: 'timestamp_ms' }),
 		createdAt: integer({ mode: 'timestamp_ms' }).notNull()
 	},
-	(table) => [uniqueIndex('members_email_unique').on(sql`lower(${table.email})`)]
+	(table) => [
+		uniqueIndex('active_members_email_unique')
+			.on(sql`lower(${table.email})`)
+			.where(sql`${table.removedAt} IS NULL`)
+	]
 );
 
 export const sessions = sqliteTable('sessions', {
