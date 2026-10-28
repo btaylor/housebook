@@ -30,7 +30,8 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 	} else if (
 		tables.join(',') === 'contractors,houses,members,sessions' ||
 		tables.join(',') === 'contractors,houses,members,sessions,sign_in_attempts' ||
-		tables.join(',') === 'contractors,houses,items,members,sessions,sign_in_attempts'
+		tables.join(',') === 'contractors,houses,items,members,sessions,sign_in_attempts' ||
+		tables.join(',') === 'contractors,houses,invites,items,members,sessions,sign_in_attempts'
 	) {
 		const now = Date.parse('2026-01-01T00:00:00Z');
 		database
@@ -64,13 +65,6 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 					'contact@example.com', 'Plumbing', 'Boiler service', NULL),
 					('archived-contractor', 'Cedar Roofing', '', '', 'Roofing', 'Old roof', 1760000000000);
 		`);
-		if (tables.includes('items')) {
-			database.exec(`
-				INSERT INTO items (id, name, category, notes, retiredDate)
-				VALUES ('current-item', 'Furnace', 'HVAC', 'Keep the service label', NULL),
-					('retired-item', 'Old pump', 'plumbing', 'Replaced', '2025-10-01');
-			`);
-		}
 		if (tables.includes('sign_in_attempts')) {
 			database
 				.prepare('INSERT INTO sign_in_attempts (memberId, attemptedAt) VALUES (?, ?)')
@@ -88,6 +82,19 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 						('retired-item', 'Old boiler', 'HVAC', 'Basement', 'Cedar', 'B0', '456',
 						'2010-01-01', '2015-01-01', 'Replaced', '2024-01-01');
 			`);
+		}
+		if (tables.includes('invites')) {
+			database
+				.prepare(
+					'INSERT INTO invites (id, tokenHash, createdBy, createdAt, expiresAt) VALUES (?, ?, ?, ?, ?)'
+				)
+				.run(
+					'existing-invite',
+					createHash('sha256').update('existing-invite-token').digest('hex'),
+					'existing-member',
+					now,
+					Date.parse('2030-01-01T00:00:00Z')
+				);
 		}
 	} else {
 		throw new Error(`Add representative previous-version fixtures for: ${tables.join(', ')}`);
@@ -147,6 +154,7 @@ test('preserves existing data and a pre-migration backup when upgrading the pack
 		await expect(
 			harness.core.auth.signIn('morgan@example.com', 'an existing password')
 		).resolves.toHaveProperty('member.id', 'existing-member');
+		expect(harness.core.invites.isValid('existing-invite-token')).toBe(true);
 
 		const backups = readdirSync(harness.dataDirectory).filter(
 			(name) => name.startsWith('housebook.pre-migration-') && name.endsWith('.sqlite')

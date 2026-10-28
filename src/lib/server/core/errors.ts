@@ -26,8 +26,7 @@ export type DomainErrorCode =
 	| 'invalid-service-record-date'
 	| 'invalid-service-record-performer'
 	| 'invalid-service-record-cost'
-	| 'contractor-archived'
-	| 'member-not-found';
+	| 'contractor-archived';
 
 export class DomainError extends Error {
 	constructor(

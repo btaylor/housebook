@@ -1,9 +1,9 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "5e3f59a1-4cfd-4ba6-96a0-73fff81bb322",
+  "id": "e64ea7f2-24a1-47c8-9f42-4b9c97905d88",
   "prevIds": [
-    "1279d04c-112b-41c0-be9d-1474dd3a82da"
+    "9226f103-eed6-444f-9851-b47fee5cf837"
   ],
   "ddl": [
     {
@@ -12,6 +12,10 @@
     },
     {
       "name": "houses",
+      "entityType": "tables"
+    },
+    {
+      "name": "invites",
       "entityType": "tables"
     },
     {
@@ -143,6 +147,76 @@
       "name": "createdAt",
       "type": "integer",
       "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "tokenHash",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "createdBy",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "createdAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "expiresAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "usedAt",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "revokedAt",
+      "type": "integer",
+      "notNull": false,
       "autoincrement": false,
       "default": null,
       "generated": null,
@@ -563,6 +637,21 @@
       "entityType": "indexes"
     },
     {
+      "table": "invites",
+      "name": "fk_invites_createdBy_members_id_fk",
+      "columns": [
+        "createdBy"
+      ],
+      "tableTo": "members",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
       "table": "service_record_items",
       "name": "fk_service_record_items_serviceRecordId_service_records_id_fk",
       "columns": [
@@ -681,6 +770,15 @@
       "entityType": "pks"
     },
     {
+      "table": "invites",
+      "name": "invites_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
       "table": "items",
       "name": "items_pk",
       "columns": [
@@ -724,6 +822,15 @@
       ],
       "nameExplicit": false,
       "entityType": "pks"
+    },
+    {
+      "table": "invites",
+      "name": "invites_tokenHash_unique",
+      "columns": [
+        "tokenHash"
+      ],
+      "nameExplicit": false,
+      "entityType": "uniques"
     },
     {
       "table": "houses",

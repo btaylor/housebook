@@ -196,11 +196,7 @@ export class Housebook {
 			contractors: record?.contractor?.archivedAt
 				? [...activeContractors, record.contractor]
 				: activeContractors,
-			members: this.database
-				.select(memberFields)
-				.from(members)
-				.orderBy(members.name, members.id)
-				.all(),
+			members: this.members.list(),
 			items: this.items.list({ includeRetired: true })
 		};
 	}

@@ -93,6 +93,7 @@ export const invites = sqliteTable('invites', {
 	usedAt: integer({ mode: 'timestamp_ms' }),
 	revokedAt: integer({ mode: 'timestamp_ms' })
 });
+
 export const serviceRecords = sqliteTable(
 	'service_records',
 	{
