@@ -11,8 +11,8 @@
 		? resolve('/(app)/items/[id]', { id: data.document.itemId })
 		: resolve('/(app)/items')}>← Item</a
 >
-<h1>{data.document.title}</h1>
-<p class="intro">
+<h1 class="document-title">{data.document.title}</h1>
+<p class="intro document-metadata">
 	{data.document.originalName} · {data.document.contentType} · {(
 		data.document.size /
 		1024 /

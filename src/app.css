@@ -703,6 +703,10 @@ textarea {
 	font-weight: 600;
 	padding: 0.4rem 0;
 }
+.document-title,
+.document-metadata {
+	overflow-wrap: anywhere;
+}
 .document-actions {
 	display: flex;
 	flex-wrap: wrap;

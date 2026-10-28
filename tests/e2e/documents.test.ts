@@ -47,7 +47,7 @@ test('phone journey adds an Item with a photo and a PDF Document, then views and
 	expect(photoResponse.headers()['content-type']).toBe('image/png');
 	expect(await photoResponse.body()).toEqual(readFileSync(resolve(fixtures, 'item-photo.png')));
 
-	await page.getByText('Attach Document', { exact: true }).click();
+	await page.locator('summary').filter({ hasText: 'Attach Document' }).click();
 	await page.getByLabel('Document title', { exact: true }).fill('Owner’s manual');
 	await page.getByLabel('Document', { exact: true }).setInputFiles(resolve(fixtures, 'manual.pdf'));
 	await page.getByRole('button', { name: 'Attach Document', exact: true }).click();
@@ -66,6 +66,12 @@ test('phone journey adds an Item with a photo and a PDF Document, then views and
 	await page.getByRole('button', { name: 'Download Document' }).click();
 	const download = await downloadEvent;
 	expect(download.suggestedFilename()).toBe('manual.pdf');
+	const longTitle = 'Water-heater-warranty-and-manual'.repeat(5);
+	await page.getByLabel('Document title', { exact: true }).fill(longTitle);
+	await page.getByRole('button', { name: 'Rename Document' }).click();
+	await expect(page.getByRole('heading', { name: longTitle, exact: true })).toBeVisible();
+	await page.setViewportSize({ width: 320, height: 851 });
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 	await page.getByLabel('Document title', { exact: true }).fill('Warranty and manual');
 	await page.getByRole('button', { name: 'Rename Document' }).click();
 	await expect(
@@ -117,6 +123,7 @@ test('upload and file routes require a session and reject cross-origin writes', 
 	await page.getByLabel('Name', { exact: true }).fill('Water heater');
 	await page.getByLabel('Category', { exact: true }).selectOption('plumbing');
 	await page.getByRole('button', { name: 'Add Item', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'Water heater', exact: true })).toBeVisible();
 	const itemUrl = new URL(page.url()).pathname;
 	const csrf = await page.request.post(`${itemUrl}?/document`, {
 		multipart: {
@@ -145,7 +152,7 @@ test('upload and file routes require a session and reject cross-origin writes', 
 					buffer: readFileSync(resolve(fixtures, 'item-photo.png'))
 				}
 			},
-			headers: { origin: app.url },
+			headers: { origin: app.url, accept: 'text/html' },
 			maxRedirects: 0
 		});
 		expect(response.status()).toBe(303);
