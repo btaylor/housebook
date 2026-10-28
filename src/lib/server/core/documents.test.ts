@@ -281,14 +281,61 @@ test('creates an Item with a photo atomically, replaces it, and removes its old 
 	expect(storedNames(value)).toEqual([]);
 });
 
+test('Retiring and un-Retiring preserve an Item’s photo, Documents and Service Records', async () => {
+	const value = await harness();
+	const item = await value.core.items.createWithPhoto(itemInput, upload('item-photo.png'));
+	const document = await value.core.documents.addToItem(item.id, 'Manual', upload('manual.pdf'));
+	const contractor = value.core.contractors.create({ name: 'Willow Plumbing' });
+	const record = value.core.serviceRecords.create({
+		date: '2026-01-01',
+		notes: 'Annual maintenance',
+		contractorId: contractor.id,
+		itemIds: [item.id]
+	});
+	const before = storedNames(value);
+	value.setTime('2026-02-03T23:59:59Z');
+	expect(value.core.items.retire(item.id).retiredDate).toBe('2026-02-03');
+	value.setTime('2026-02-04T00:00:00Z');
+	expect(value.core.items.retire(item.id).retiredDate).toBe('2026-02-03');
+	await value.start();
+	expect(value.core.items.list()).toEqual([]);
+	expect(value.core.items.list({ includeRetired: true })).toMatchObject([
+		{ id: item.id, retiredDate: '2026-02-03', photoId: item.photoId }
+	]);
+	expect(value.core.serviceRecords.get(record.id)).toMatchObject({
+		...record,
+		items: [{ id: item.id, name: item.name, retiredDate: '2026-02-03' }]
+	});
+	expect(value.core.serviceRecords.list({ itemId: item.id })).toHaveLength(1);
+	expect(value.core.documents.listForItem(item.id).map(({ id }) => id)).toEqual([document.id]);
+	for (const [opened, name] of [
+		[value.core.items.openPhoto(item.id), 'item-photo.png'],
+		[value.core.documents.open(document.id), 'manual.pdf']
+	] as const) {
+		expect(Buffer.concat(await opened.stream.toArray())).toEqual(fixture(name));
+	}
+	expect(storedNames(value)).toEqual(before);
+	value.core.items.unretire(item.id);
+	value.core.items.unretire(item.id);
+	await value.start();
+	expect(value.core.items.list()).toEqual([item]);
+	expect(value.core.serviceRecords.get(record.id)).toEqual(record);
+	expect(value.core.documents.listForItem(item.id)).toHaveLength(1);
+	expect(storedNames(value)).toEqual(before);
+});
+
 test('deleting an Item removes its photo and Documents but keeps another Item’s files', async () => {
 	const value = await harness();
 	const first = await value.core.items.createWithPhoto(itemInput, upload('item-photo.png'));
 	const second = value.core.items.create(itemInput);
-	await value.core.documents.addToItem(first.id, 'Manual', upload('manual.pdf'));
+	const removed = await value.core.documents.addToItem(first.id, 'Manual', upload('manual.pdf'));
+	await value.core.documents.addToItem(first.id, 'Warranty', upload('manual.pdf'));
 	const retained = await value.core.documents.addToItem(second.id, 'Manual', upload('manual.pdf'));
 	value.core.items.delete(first.id);
 	expect(value.core.items.get(first.id)).toBeNull();
+	expect(() => value.core.documents.get(removed.id)).toThrow(
+		expect.objectContaining({ code: 'document-not-found' })
+	);
 	expect(storedNames(value)).toEqual([value.core.documents.get(retained.id).storedName]);
 	await value.start();
 	expect(value.core.documents.listForItem(second.id)).toHaveLength(1);
@@ -314,10 +361,15 @@ test('keeps Item files when Service Records prevent deletion, then cleans up aft
 	expect(storedNames(value)).toEqual(before);
 	const opened = value.core.items.openPhoto(item.id);
 	expect(Buffer.concat(await opened.stream.toArray())).toEqual(fixture('item-photo.png'));
-	value.core.serviceRecords.delete(record.id);
+	const retained = value.core.serviceRecords.update(record.id, {
+		date: record.date,
+		notes: record.notes,
+		contractorId: contractor.id
+	});
 	value.core.items.delete(item.id);
 	expect(value.core.items.get(item.id)).toBeNull();
 	expect(storedNames(value)).toEqual([]);
+	expect(value.core.serviceRecords.get(record.id)).toEqual(retained);
 });
 
 test('requires exactly one existing Item or Service Record owner for a Document', async () => {

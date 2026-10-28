@@ -229,6 +229,13 @@ describe('Items', () => {
 		expect(() => core.items.update('missing', fullItem)).toThrow(
 			expect.objectContaining({ code: 'item-not-found' })
 		);
+		for (const operation of [
+			() => core.items.retire('missing'),
+			() => core.items.unretire('missing'),
+			() => core.items.delete('missing')
+		]) {
+			expect(operation).toThrow(expect.objectContaining({ code: 'item-not-found' }));
+		}
 		expect(core.items.list()).toEqual([]);
 	});
 });
