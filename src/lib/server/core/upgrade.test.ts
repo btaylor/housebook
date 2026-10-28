@@ -64,6 +64,13 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 					'contact@example.com', 'Plumbing', 'Boiler service', NULL),
 					('archived-contractor', 'Cedar Roofing', '', '', 'Roofing', 'Old roof', 1760000000000);
 		`);
+		if (tables.includes('items')) {
+			database.exec(`
+				INSERT INTO items (id, name, category, notes, retiredDate)
+				VALUES ('current-item', 'Furnace', 'HVAC', 'Keep the service label', NULL),
+					('retired-item', 'Old pump', 'plumbing', 'Replaced', '2025-10-01');
+			`);
+		}
 		if (tables.includes('sign_in_attempts')) {
 			database
 				.prepare('INSERT INTO sign_in_attempts (memberId, attemptedAt) VALUES (?, ?)')

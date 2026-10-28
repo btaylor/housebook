@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
 import { itemCategories, type ItemInput } from '../../items';
-import { items } from '../schema';
+import { items, serviceRecordItems } from '../schema';
 import { DomainError } from './errors';
 
 function calendarDate(value: string | null | undefined, label: string) {
@@ -73,18 +73,37 @@ export class Items {
 		return { ...item, warrantyStatus };
 	}
 
-	list({ search = '', category = '' } = {}) {
+	list({ search = '', category = '', includeRetired = false } = {}) {
 		return this.database
 			.select()
 			.from(items)
 			.where(
 				and(
-					isNull(items.retiredDate),
+					includeRetired ? undefined : isNull(items.retiredDate),
 					search.trim() ? sql`instr(lower(${items.name}), lower(${search.trim()})) > 0` : undefined,
 					category ? sql`${items.category} = ${category}` : undefined
 				)
 			)
 			.orderBy(asc(items.name), asc(items.id))
 			.all();
+	}
+
+	delete(id: string) {
+		this.database.transaction(() => {
+			if (!this.get(id)) throw new DomainError('item-not-found', 'Item not found.');
+			if (
+				this.database
+					.select({ id: serviceRecordItems.serviceRecordId })
+					.from(serviceRecordItems)
+					.where(eq(serviceRecordItems.itemId, id))
+					.get()
+			) {
+				throw new DomainError(
+					'item-has-service-records',
+					'This Item has Service Records and cannot be deleted.'
+				);
+			}
+			this.database.delete(items).where(eq(items.id, id)).run();
+		});
 	}
 }
