@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import ServiceRecordList from '../../../../lib/ServiceRecordList.svelte';
 	import type { PageProps } from './$types';
 	let { data }: PageProps = $props();
 </script>
@@ -54,4 +55,8 @@
 			{data.contractor.archivedAt ? 'Un-Archive Contractor' : 'Archive Contractor'}
 		</button>
 	</form>
+</section>
+<section class="service-history" aria-label="Service Records">
+	<h2>Service Records</h2>
+	<ServiceRecordList records={data.records} currency={data.house.currency} />
 </section>

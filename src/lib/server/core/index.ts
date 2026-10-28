@@ -6,6 +6,7 @@ import { currencies } from './currencies';
 import { DomainError } from './errors';
 import { Items } from './items';
 import { hashPassword, verifyPassword } from './passwords';
+import { ServiceRecords } from './service-records';
 
 export { currencies } from './currencies';
 
@@ -174,6 +175,7 @@ export class Housebook {
 	readonly invites: Invites;
 	readonly contractors: Contractors;
 	readonly items: Items;
+	readonly serviceRecords: ServiceRecords;
 	constructor(
 		readonly database: NodeSQLiteDatabase,
 		readonly dataDirectory: string,
@@ -185,6 +187,18 @@ export class Housebook {
 		this.invites = new Invites(database, clock);
 		this.contractors = new Contractors(database, clock);
 		this.items = new Items(database, clock);
+		this.serviceRecords = new ServiceRecords(database);
+	}
+	serviceRecordOptions(id?: string) {
+		const record = id ? this.serviceRecords.get(id) : null;
+		const activeContractors = this.contractors.listActive();
+		return {
+			contractors: record?.contractor?.archivedAt
+				? [...activeContractors, record.contractor]
+				: activeContractors,
+			members: this.members.list(),
+			items: this.items.list({ includeRetired: true })
+		};
 	}
 
 	renameHouse(token: string, name: string) {

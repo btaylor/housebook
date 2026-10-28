@@ -1,5 +1,13 @@
 import { sql } from 'drizzle-orm';
-import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import {
+	check,
+	index,
+	integer,
+	primaryKey,
+	sqliteTable,
+	text,
+	uniqueIndex
+} from 'drizzle-orm/sqlite-core';
 
 import { itemCategories } from '../items';
 
@@ -85,3 +93,43 @@ export const invites = sqliteTable('invites', {
 	usedAt: integer({ mode: 'timestamp_ms' }),
 	revokedAt: integer({ mode: 'timestamp_ms' })
 });
+
+export const serviceRecords = sqliteTable(
+	'service_records',
+	{
+		id: text().primaryKey(),
+		date: text().notNull(),
+		notes: text().notNull(),
+		costCents: integer(),
+		contractorId: text().references(() => contractors.id, { onDelete: 'restrict' }),
+		memberId: text().references(() => members.id, { onDelete: 'restrict' })
+	},
+	(table) => [
+		check(
+			'service_record_performer',
+			sql`(${table.contractorId} IS NOT NULL) != (${table.memberId} IS NOT NULL)`
+		),
+		check(
+			'service_record_cost',
+			sql`${table.costCents} IS NULL OR (typeof(${table.costCents}) = 'integer' AND ${table.costCents} BETWEEN 0 AND 9007199254740991)`
+		),
+		index('service_records_date').on(table.date),
+		index('service_records_contractor').on(table.contractorId)
+	]
+);
+
+export const serviceRecordItems = sqliteTable(
+	'service_record_items',
+	{
+		serviceRecordId: text()
+			.notNull()
+			.references(() => serviceRecords.id, { onDelete: 'cascade' }),
+		itemId: text()
+			.notNull()
+			.references(() => items.id, { onDelete: 'restrict' })
+	},
+	(table) => [
+		primaryKey({ columns: [table.serviceRecordId, table.itemId] }),
+		index('service_record_items_item').on(table.itemId)
+	]
+);

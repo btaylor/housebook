@@ -20,7 +20,13 @@ export type DomainErrorCode =
 	| 'invalid-item-name'
 	| 'invalid-item-category'
 	| 'invalid-item-date'
-	| 'item-not-found';
+	| 'item-not-found'
+	| 'item-has-service-records'
+	| 'service-record-not-found'
+	| 'invalid-service-record-date'
+	| 'invalid-service-record-performer'
+	| 'invalid-service-record-cost'
+	| 'contractor-archived';
 
 export class DomainError extends Error {
 	constructor(
