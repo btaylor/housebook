@@ -352,6 +352,11 @@ test('keeps Item files when Service Records prevent deletion, then cleans up aft
 		contractorId: contractor.id,
 		itemIds: [item.id]
 	});
+	const receipt = await value.core.documents.addToServiceRecord(
+		record.id,
+		'Service receipt',
+		upload('manual.pdf')
+	);
 	const before = storedNames(value);
 	expect(() => value.core.items.delete(item.id)).toThrow(
 		expect.objectContaining({ code: 'item-has-service-records' })
@@ -368,8 +373,11 @@ test('keeps Item files when Service Records prevent deletion, then cleans up aft
 	});
 	value.core.items.delete(item.id);
 	expect(value.core.items.get(item.id)).toBeNull();
-	expect(storedNames(value)).toEqual([]);
+	expect(storedNames(value)).toEqual([value.core.documents.get(receipt.id).storedName]);
+	await value.start();
 	expect(value.core.serviceRecords.get(record.id)).toEqual(retained);
+	const retainedFile = value.core.documents.open(receipt.id);
+	expect(Buffer.concat(await retainedFile.stream.toArray())).toEqual(fixture('manual.pdf'));
 });
 
 test('requires exactly one existing Item or Service Record owner for a Document', async () => {
