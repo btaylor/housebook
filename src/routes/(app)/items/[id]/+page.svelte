@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import ServiceRecordList from '../../../../lib/ServiceRecordList.svelte';
 	import type { PageProps } from './$types';
 	let { data }: PageProps = $props();
 </script>
@@ -49,4 +50,15 @@
 	</div>
 	<h2>Notes</h2>
 	<p class="item-notes">{data.item.notes ?? 'No notes recorded.'}</p>
+</section>
+<section class="service-history" aria-label="Service Records">
+	<div class="page-heading">
+		<h2>Service Records</h2>
+		<a
+			class="secondary button-link"
+			href="{resolve('/(app)/maintenance-log/new')}?item={encodeURIComponent(data.item.id)}"
+			>Log work</a
+		>
+	</div>
+	<ServiceRecordList records={data.records} currency={data.house.currency} />
 </section>

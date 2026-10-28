@@ -1,6 +1,10 @@
 import { error, redirect } from '@sveltejs/kit';
 import { DomainError } from '../../../../lib/server/core';
-import type { Actions } from './$types';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = ({ locals, params }) => ({
+	records: locals.housebook.serviceRecords.list({ contractorId: params.id })
+});
 
 export const actions: Actions = {
 	archive: ({ locals, params }) => {

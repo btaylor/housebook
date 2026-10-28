@@ -2,7 +2,8 @@
 
 A self-hosted, shared record of one House. Create your House, sign in, and move between
 Items, Maintenance Log, Contractors, and Settings. Add, find, and edit Items. Keep Contractor
-contact details and Archive those you no longer use. Maintenance Log records are placeholders.
+contact details and Archive those you no longer use. Log work in Service Records and find it
+in the Maintenance Log and on each linked Item and Contractor.
 
 ## Install
 
@@ -87,6 +88,17 @@ warranty end date, and notes are optional. Search by name and filter by category
 Dates stay as calendar dates, without times or time zones. Warranty status uses the core clock's
 UTC calendar day: it stays active through the end date and ends the next day.
 An Item without a warranty end date shows “No warranty end date recorded,” not an active warranty.
+
+## Maintenance Log
+
+Use **Log work** to record a calendar date, notes, an optional cost in the House currency,
+and exactly one Contractor or Member. Select any number of Items; none means the whole House.
+Log work from an Item's page to pre-select it. The Maintenance Log and Item and Contractor
+Service Records show newest dates first. You can edit or permanently delete a Service Record.
+Costs use a decimal point and at most two decimal places, and are stored as integer cents.
+Archived Contractors cannot be assigned to new Service Records, but stay on existing ones.
+Retired Items stay linked. An Item with Service Records cannot be deleted.
+Documents on Service Records are not yet available.
 
 ## Upgrade
 
