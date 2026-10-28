@@ -22,6 +22,24 @@
 </div>
 {#if form?.error}<p class="form-error upload-feedback" role="alert">{form.error}</p>{/if}
 {#if form?.message}<p class="form-success upload-feedback" role="status">{form.message}</p>{/if}
+<section class="item-details item-lifecycle" aria-label="Item status">
+	<h2>{data.item.retiredDate ? 'Retired Item' : 'Current Item'}</h2>
+	{#if data.item.retiredDate}
+		<p class="hint">
+			Retired on <time datetime={data.item.retiredDate}>{data.item.retiredDate}</time>. Its history
+			and Documents are kept.
+		</p>
+	{:else}
+		<p class="hint">
+			Retire an Item that has left the House. Its history and Documents stay in your Housebook.
+		</p>
+	{/if}
+	<form method="POST" action={data.item.retiredDate ? '?/unretire' : '?/retire'}>
+		<button class="secondary" type="submit">
+			{data.item.retiredDate ? 'Un-Retire Item' : 'Retire Item'}
+		</button>
+	</form>
+</section>
 <section class="item-details">
 	<h2>Main photo</h2>
 	{#if data.item.photoId}
@@ -106,3 +124,13 @@
 	</div>
 	<ServiceRecordList records={data.records} currency={data.house.currency} />
 </section>
+<details class="delete-record">
+	<summary>Delete Item</summary>
+	<form method="POST" action="?/delete">
+		<p class="hint">
+			This permanently deletes the Item, its photo, and its Documents and their files. An Item with
+			Service Records cannot be deleted. Retire it to keep its history.
+		</p>
+		<button class="secondary" type="submit">Confirm deletion</button>
+	</form>
+</details>

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { expect } from '@playwright/test';
 import { test } from './app';
 
@@ -8,6 +10,115 @@ const setup = {
 	email: 'morgan@example.com',
 	password: 'a calm willow house'
 };
+
+test('phone journey Retires an Item, finds it with Show Retired and un-Retires it without losing history', async ({
+	page,
+	app
+}) => {
+	const headers = { origin: app.url, accept: 'text/html' };
+	await page.request.post('/setup', { form: { ...setup, code: app.setupCode }, headers });
+	const created = await page.request.post('/items/new', {
+		form: { name: 'Water heater', category: 'plumbing' },
+		headers
+	});
+	const itemUrl = created.url();
+	await page.request.post(`${itemUrl}?/document`, {
+		multipart: {
+			title: 'Owner’s manual',
+			document: {
+				name: 'manual.pdf',
+				mimeType: 'application/pdf',
+				buffer: readFileSync(resolve('tests/fixtures/manual.pdf'))
+			}
+		},
+		headers
+	});
+	await page.goto(itemUrl);
+	await page.getByRole('link', { name: 'Log work', exact: true }).click();
+	await page.getByLabel('Date', { exact: false }).fill('2026-01-01');
+	await page.getByLabel('Done by').selectOption({ label: 'Morgan' });
+	await page.getByLabel('Notes').fill('Annual maintenance');
+	await page.getByRole('button', { name: 'Save Service Record' }).click();
+	await expect(page.getByRole('heading', { name: 'Service Record', exact: true })).toBeVisible();
+	const recordUrl = page.url();
+	await page.getByRole('link', { name: 'Water heater', exact: true }).click();
+	await page.getByRole('button', { name: 'Retire Item', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'Retired Item', exact: true })).toBeVisible();
+	await expect(page.getByRole('link', { name: 'Owner’s manual', exact: true })).toBeVisible();
+	await page.getByRole('link', { name: '← Items', exact: true }).click();
+	await expect(page.getByRole('link', { name: /Water heater plumbing/ })).toHaveCount(0);
+	await page.getByLabel('Search by name').fill('heater');
+	await page.getByLabel('Category', { exact: true }).selectOption('plumbing');
+	await page.getByRole('button', { name: 'Find Items' }).click();
+	await page.getByRole('checkbox', { name: 'Show Retired' }).check();
+	await expect(page.getByLabel('Search by name')).toHaveValue('heater');
+	await expect(page.getByLabel('Category', { exact: true })).toHaveValue('plumbing');
+	await page.getByRole('button', { name: 'Find Items' }).click();
+	await expect(page.getByRole('checkbox', { name: 'Show Retired' })).toBeChecked();
+	await page.getByRole('link', { name: /Water heater plumbing Retired/ }).click();
+	await page.getByRole('link', { name: /Annual maintenance/ }).click();
+	await expect(page).toHaveURL(recordUrl);
+	await expect(page.getByRole('definition').filter({ hasText: 'Water heater' })).toHaveText(
+		'Water heater (Retired)'
+	);
+	await page.getByRole('link', { name: 'Water heater', exact: true }).click();
+	await page.getByText('Delete Item', { exact: true }).click();
+	await page.getByRole('button', { name: 'Confirm deletion' }).click();
+	await expect(page.getByRole('alert')).toHaveText(
+		'This Item has Service Records and cannot be deleted.'
+	);
+	await expect(page.getByRole('link', { name: 'Owner’s manual', exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Un-Retire Item', exact: true }).click();
+	await page.getByRole('link', { name: '← Items', exact: true }).click();
+	await expect(page.getByRole('checkbox', { name: 'Show Retired' })).not.toBeChecked();
+	await page.getByRole('link', { name: 'Water heater plumbing', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'Current Item', exact: true })).toBeVisible();
+});
+
+test('phone journey deletes an Item and its photo and Documents after confirmation', async ({
+	page,
+	app
+}) => {
+	const headers = { origin: app.url, accept: 'text/html' };
+	await page.request.post('/setup', { form: { ...setup, code: app.setupCode }, headers });
+	const created = await page.request.post('/items/new', {
+		multipart: {
+			name: 'Mistaken Item',
+			category: 'other',
+			photo: {
+				name: 'item-photo.png',
+				mimeType: 'image/png',
+				buffer: readFileSync(resolve('tests/fixtures/item-photo.png'))
+			}
+		},
+		headers
+	});
+	const itemUrl = created.url();
+	await page.request.post(`${itemUrl}?/document`, {
+		multipart: {
+			title: 'Manual',
+			document: {
+				name: 'manual.pdf',
+				mimeType: 'application/pdf',
+				buffer: readFileSync(resolve('tests/fixtures/manual.pdf'))
+			}
+		},
+		headers
+	});
+	await page.goto(itemUrl);
+	await expect(page.getByRole('img', { name: 'Main photo of Mistaken Item' })).toBeVisible();
+	await page.getByRole('link', { name: 'Manual', exact: true }).click();
+	const documentUrl = page.url();
+	await page.goto(itemUrl);
+	await expect(page.getByRole('button', { name: 'Confirm deletion' })).not.toBeVisible();
+	await page.getByText('Delete Item', { exact: true }).click();
+	await page.getByRole('button', { name: 'Confirm deletion' }).click();
+	await expect(page).toHaveURL(/\/items$/);
+	await expect(page.getByRole('link', { name: /Mistaken Item/ })).toHaveCount(0);
+	for (const path of [itemUrl, `${itemUrl}/photo`, documentUrl, `${documentUrl}/file`]) {
+		expect((await page.request.get(path)).status()).toBe(404);
+	}
+});
 
 test('phone Item categories persist through creation, editing and filtering', async ({
 	page,
@@ -156,7 +267,14 @@ test('Item forms preserve invalid submissions, allow clearing optional fields an
 	});
 	const outsider = await browser.newContext();
 	try {
-		for (const path of ['/items/new', '/items/missing', '/items/missing/edit']) {
+		for (const path of [
+			'/items/new',
+			'/items/missing',
+			'/items/missing/edit',
+			'/items/missing?/retire',
+			'/items/missing?/unretire',
+			'/items/missing?/delete'
+		]) {
 			const response = await outsider.request.post(`${app.url}${path}`, {
 				form: { name: 'Untrusted Item', category: 'other' },
 				headers: { origin: app.url, accept: 'text/html' },
