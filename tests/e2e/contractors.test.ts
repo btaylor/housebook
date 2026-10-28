@@ -34,12 +34,24 @@ test('phone Contractor creation, editing, contact links, Archive and un-Archive'
 	await expect(page.getByRole('alert')).toHaveText('Enter a Contractor name.');
 	await expect(page.getByLabel('Phone')).toHaveValue('+1 415 555 0123');
 	await page.getByLabel('Name').fill('Willow Plumbing');
+	await page.getByLabel('Phone').fill('+ (---)');
+	await page.getByRole('button', { name: 'Save Contractor' }).click();
+	await expect(page.getByRole('alert')).toHaveText('Enter a phone number with at least one digit.');
+	await expect(page.getByLabel('Phone')).toHaveAttribute('aria-invalid', 'true');
+	await page.getByLabel('Phone').fill(' +1 (415) 555.01-23 ');
+	await page.getByLabel('Email', { exact: true }).fill('lee.example@host');
+	await page.getByRole('button', { name: 'Save Contractor' }).click();
+	await expect(page.getByRole('alert')).toHaveText(
+		'Enter an email address with an @ followed by a period.'
+	);
+	await expect(page.getByLabel('Email', { exact: true })).toHaveAttribute('aria-invalid', 'true');
+	await page.getByLabel('Email', { exact: true }).fill(' LEE@Example.COM ');
 	await page.getByRole('button', { name: 'Save Contractor' }).click();
 	await expect(page.getByRole('heading', { name: 'Willow Plumbing' })).toBeVisible();
 	const detailURL = page.url();
-	await expect(page.getByRole('link', { name: '+1 415 555 0123' })).toHaveAttribute(
+	await expect(page.getByRole('link', { name: '+14155550123' })).toHaveAttribute(
 		'href',
-		'tel:+1 415 555 0123'
+		'tel:+14155550123'
 	);
 	await expect(page.getByRole('link', { name: 'lee@example.com' })).toHaveAttribute(
 		'href',
@@ -50,8 +62,28 @@ test('phone Contractor creation, editing, contact links, Archive and un-Archive'
 	await expect(page.getByLabel('Name')).toHaveValue('Willow Plumbing');
 	await page.getByLabel('Name').fill(editedName);
 	await page.getByLabel('Notes').fill('Annual furnace check. Ask for Lee.');
+	await page.getByLabel('Phone').fill('no digits');
+	await page.getByLabel('Email', { exact: true }).fill('lee@example');
+	await page.getByRole('button', { name: 'Save changes' }).click();
+	await expect(page.getByRole('alert')).toHaveText('Enter a phone number with at least one digit.');
+	await expect(page.getByLabel('Phone')).toHaveAttribute('aria-invalid', 'true');
+	await page.getByLabel('Phone').fill('(415) 555.0199');
+	await page.getByRole('button', { name: 'Save changes' }).click();
+	await expect(page.getByRole('alert')).toHaveText(
+		'Enter an email address with an @ followed by a period.'
+	);
+	await expect(page.getByLabel('Email', { exact: true })).toHaveAttribute('aria-invalid', 'true');
+	await page.getByLabel('Email', { exact: true }).fill(' LEE @EXAMPLE.COM ');
 	await page.getByRole('button', { name: 'Save changes' }).click();
 	await expect(page.getByRole('heading', { name: editedName })).toBeVisible();
+	await expect(page.getByRole('link', { name: '4155550199' })).toHaveAttribute(
+		'href',
+		'tel:4155550199'
+	);
+	await expect(page.getByRole('link', { name: 'lee @example.com' })).toHaveAttribute(
+		'href',
+		'mailto:lee @example.com'
+	);
 	await page.getByRole('button', { name: 'Archive Contractor', exact: true }).click();
 	await expect(page).toHaveURL(/\/contractors$/);
 	await expect(page.getByRole('link', { name: editedName })).toHaveCount(0);

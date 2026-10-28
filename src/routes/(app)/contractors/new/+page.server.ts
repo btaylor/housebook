@@ -16,7 +16,9 @@ export const actions: Actions = {
 		try {
 			contractor = locals.housebook.contractors.create(values);
 		} catch (error) {
-			if (error instanceof DomainError) return fail(400, { message: error.message, values });
+			if (error instanceof DomainError) {
+				return fail(400, { code: error.code, message: error.message, values });
+			}
 			throw error;
 		}
 		redirect(303, `/contractors/${contractor.id}`);

@@ -17,6 +17,8 @@ export type DomainErrorCode =
 	| 'password-too-short'
 	| 'invalid-credentials'
 	| 'invalid-contractor-name'
+	| 'invalid-contractor-phone'
+	| 'invalid-contractor-email'
 	| 'contractor-not-found';
 
 export class DomainError extends Error {
@@ -97,10 +99,27 @@ class Contractors {
 	private validate(input: ContractorInput) {
 		const name = input.name.trim();
 		if (!name) throw new DomainError('invalid-contractor-name', 'Enter a Contractor name.');
+		const rawPhone = input.phone?.trim() ?? '';
+		const digits = rawPhone.replace(/\D/g, '');
+		if (rawPhone && !digits) {
+			throw new DomainError(
+				'invalid-contractor-phone',
+				'Enter a phone number with at least one digit.'
+			);
+		}
+		const phone = (rawPhone.startsWith('+') ? '+' : '') + digits;
+		const email = input.email?.trim().toLowerCase() ?? '';
+		const at = email.indexOf('@');
+		if (email && (at < 0 || email.indexOf('.', at + 1) < 0)) {
+			throw new DomainError(
+				'invalid-contractor-email',
+				'Enter an email address with an @ followed by a period.'
+			);
+		}
 		return {
 			name,
-			phone: input.phone?.trim() ?? '',
-			email: input.email?.trim() ?? '',
+			phone,
+			email,
 			trade: input.trade?.trim() ?? '',
 			notes: input.notes?.trim() ?? ''
 		};

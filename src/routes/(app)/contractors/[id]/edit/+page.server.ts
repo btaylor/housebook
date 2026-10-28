@@ -17,6 +17,7 @@ export const actions: Actions = {
 		} catch (error) {
 			if (error instanceof DomainError) {
 				return fail(error.code === 'contractor-not-found' ? 404 : 400, {
+					code: error.code,
 					message: error.message,
 					values
 				});

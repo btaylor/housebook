@@ -15,6 +15,7 @@
 <h1>Edit Contractor</h1>
 <ContractorForm
 	values={form?.values ?? data.contractor}
+	code={form?.code}
 	message={form?.message}
 	submitLabel="Save changes"
 />

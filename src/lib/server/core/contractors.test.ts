@@ -12,15 +12,15 @@ test('creates, views, edits, and persists Contractor details with optional field
 	const contractors = harness.core.contractors;
 	const created = contractors.create({
 		name: '  Willow Plumbing  ',
-		phone: ' +1 415 555 0123 ',
-		email: ' willow@example.com ',
+		phone: ' +1 (415) [555].01-23 ',
+		email: ' WILLOW@Example.COM ',
 		trade: ' Plumbing ',
 		notes: ' Shutoff beside the garage.\nAsk for Lee. '
 	});
 	expect(created).toEqual({
 		id: expect.any(String),
 		name: 'Willow Plumbing',
-		phone: '+1 415 555 0123',
+		phone: '+14155550123',
 		email: 'willow@example.com',
 		trade: 'Plumbing',
 		notes: 'Shutoff beside the garage.\nAsk for Lee.',
@@ -29,15 +29,15 @@ test('creates, views, edits, and persists Contractor details with optional field
 	expect(contractors.get(created.id)).toEqual(created);
 	const edited = contractors.update(created.id, {
 		name: 'Willow Repairs',
-		phone: '555-0199',
-		email: 'lee@example.com',
+		phone: ' (415) 555.0199 ',
+		email: ' LEE@EXAMPLE.COM ',
 		trade: 'Repairs',
 		notes: 'Call in the morning.'
 	});
 	expect(edited).toEqual({
 		...created,
 		name: 'Willow Repairs',
-		phone: '555-0199',
+		phone: '4155550199',
 		email: 'lee@example.com',
 		trade: 'Repairs',
 		notes: 'Call in the morning.'
@@ -60,6 +60,55 @@ test('creates, views, edits, and persists Contractor details with optional field
 		notes: '',
 		archivedAt: null
 	});
+});
+
+test.each(['', ' \t\n '])('allows optional blank phone and email values: %j', async (blank) => {
+	harness = await createHousebookHarness();
+	const contractors = harness.core.contractors;
+	const created = contractors.create({ name: 'Lee', phone: blank, email: blank });
+	expect(created).toMatchObject({ phone: '', email: '' });
+	contractors.update(created.id, {
+		name: 'Lee',
+		phone: '+1 415 555 0123',
+		email: 'lee@example.com'
+	});
+	expect(contractors.update(created.id, { name: 'Lee', phone: blank, email: blank })).toMatchObject(
+		{
+			phone: '',
+			email: ''
+		}
+	);
+});
+
+test.each([
+	['phone', '+ (---) []...', 'invalid-contractor-phone'],
+	['email', 'lee.example.com', 'invalid-contractor-email'],
+	['email', 'lee@example', 'invalid-contractor-email'],
+	['email', 'lee.example@host', 'invalid-contractor-email']
+] as const)(
+	'rejects invalid %s %j on create and edit without changing data',
+	async (field, value, code) => {
+		harness = await createHousebookHarness();
+		const contractors = harness.core.contractors;
+		const input = { name: 'Lee', [field]: value };
+		expect(() => contractors.create(input)).toThrowError(expect.objectContaining({ code }));
+		expect(contractors.list()).toEqual([]);
+		const created = contractors.create({ name: 'Lee', phone: '5550123', email: 'lee@example.com' });
+		expect(() => contractors.update(created.id, input)).toThrowError(
+			expect.objectContaining({ code })
+		);
+		expect(contractors.get(created.id)).toEqual(created);
+	}
+);
+
+test('keeps only a leading phone plus and uses only the simple email check', async () => {
+	harness = await createHousebookHarness();
+	const contractors = harness.core.contractors;
+	const created = contractors.create({ name: 'Lee', phone: '1+2x3', email: ' @. ' });
+	expect(created).toMatchObject({ phone: '123', email: '@.' });
+	expect(
+		contractors.update(created.id, { name: 'Lee', phone: ' +4+5x6 ', email: ' A B@C.D ' })
+	).toMatchObject({ phone: '+456', email: 'a b@c.d' });
 });
 
 test('requires a non-blank name on create and edit without changing stored details', async () => {
