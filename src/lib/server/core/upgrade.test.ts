@@ -27,7 +27,7 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 		database.exec('CREATE TABLE upgrade_fixture (value TEXT NOT NULL);');
 		database.prepare('INSERT INTO upgrade_fixture VALUES (?)').run('keep this existing row');
 		tables.push('upgrade_fixture');
-	} else {
+	} else if (tables.join(',') === 'contractors,houses,members,sessions') {
 		const now = Date.parse('2026-01-01T00:00:00Z');
 		database
 			.prepare('INSERT INTO houses (name, currency, createdAt) VALUES (?, ?, ?)')
@@ -54,6 +54,14 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 				now,
 				Date.parse('2030-01-01T00:00:00Z')
 			);
+		database.exec(`
+			INSERT INTO contractors (id, name, phone, email, trade, notes, archivedAt)
+				VALUES ('active-contractor', 'Willow Plumbing', '5551234567',
+					'contact@example.com', 'Plumbing', 'Boiler service', NULL),
+					('archived-contractor', 'Cedar Roofing', '', '', 'Roofing', 'Old roof', 1760000000000);
+		`);
+	} else {
+		throw new Error(`Add representative previous-version fixtures for: ${tables.join(', ')}`);
 	}
 
 	return tables.map((table) => {

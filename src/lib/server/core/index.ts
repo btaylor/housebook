@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import { and, count, desc, DrizzleQueryError, eq, gt, lte, sql } from 'drizzle-orm';
+import { and, count, desc, DrizzleQueryError, eq, gt, isNull, lte, sql } from 'drizzle-orm';
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
-import { houses, members, sessions, signInAttempts } from '../schema';
+import { contractors, houses, members, sessions, signInAttempts } from '../schema';
 import { currencies } from './currencies';
 import { hashPassword, verifyPassword } from './passwords';
 
@@ -19,7 +19,11 @@ export type DomainErrorCode =
 	| 'sign-in-locked'
 	| 'session-required'
 	| 'email-in-use'
-	| 'incorrect-current-password';
+	| 'incorrect-current-password'
+	| 'invalid-contractor-name'
+	| 'invalid-contractor-phone'
+	| 'invalid-contractor-email'
+	| 'contractor-not-found';
 
 export class DomainError extends Error {
 	constructor(
@@ -28,6 +32,101 @@ export class DomainError extends Error {
 	) {
 		super(message);
 		this.name = 'DomainError';
+	}
+}
+
+class Contractors {
+	constructor(
+		private database: NodeSQLiteDatabase,
+		private clock: () => Date
+	) {}
+
+	create(input: ContractorInput) {
+		return this.database
+			.insert(contractors)
+			.values({ id: randomUUID(), ...this.validate(input) })
+			.returning()
+			.get();
+	}
+
+	update(id: string, input: ContractorInput) {
+		this.get(id);
+		return this.database
+			.update(contractors)
+			.set(this.validate(input))
+			.where(eq(contractors.id, id))
+			.returning()
+			.get()!;
+	}
+
+	get(id: string) {
+		const contractor = this.database.select().from(contractors).where(eq(contractors.id, id)).get();
+		if (!contractor) {
+			throw new DomainError('contractor-not-found', 'Contractor not found.');
+		}
+		return contractor;
+	}
+
+	list({ includeArchived = false } = {}) {
+		return this.database
+			.select()
+			.from(contractors)
+			.where(includeArchived ? undefined : isNull(contractors.archivedAt))
+			.orderBy(sql`${contractors.name} COLLATE NOCASE`, contractors.id)
+			.all();
+	}
+
+	listActive() {
+		return this.list();
+	}
+
+	archive(id: string) {
+		const contractor = this.get(id);
+		return this.database
+			.update(contractors)
+			.set({ archivedAt: contractor.archivedAt ?? this.clock() })
+			.where(eq(contractors.id, id))
+			.returning()
+			.get()!;
+	}
+
+	unarchive(id: string) {
+		this.get(id);
+		return this.database
+			.update(contractors)
+			.set({ archivedAt: null })
+			.where(eq(contractors.id, id))
+			.returning()
+			.get()!;
+	}
+
+	private validate(input: ContractorInput) {
+		const name = input.name.trim();
+		if (!name) throw new DomainError('invalid-contractor-name', 'Enter a Contractor name.');
+		const rawPhone = input.phone?.trim() ?? '';
+		const digits = rawPhone.replace(/\D/g, '');
+		if (rawPhone && !digits) {
+			throw new DomainError(
+				'invalid-contractor-phone',
+				'Enter a phone number with at least one digit.'
+			);
+		}
+		const phone = (rawPhone.startsWith('+') ? '+' : '') + digits;
+		const email = input.email?.trim().toLowerCase() ?? '';
+		const at = email.indexOf('@');
+		if (email && (at < 0 || email.indexOf('.', at + 1) < 0)) {
+			throw new DomainError(
+				'invalid-contractor-email',
+				'Enter an email address with an @ followed by a period.'
+			);
+		}
+		return {
+			name,
+			phone,
+			email,
+			trade: input.trade?.trim() ?? '',
+			notes: input.notes?.trim() ?? ''
+		};
 	}
 }
 
@@ -41,6 +140,14 @@ export interface Session {
 	token: string;
 	expiresAt: Date;
 	member: Member;
+}
+
+export interface ContractorInput {
+	name: string;
+	phone?: string;
+	email?: string;
+	trade?: string;
+	notes?: string;
 }
 
 interface SetupInput {
@@ -83,6 +190,7 @@ function houseName(name: string) {
 export class Housebook {
 	readonly setup: Setup;
 	readonly auth: Auth;
+	readonly contractors: Contractors;
 	constructor(
 		readonly database: NodeSQLiteDatabase,
 		readonly dataDirectory: string,
@@ -90,6 +198,7 @@ export class Housebook {
 	) {
 		this.auth = new Auth(database, clock);
 		this.setup = new Setup(database, clock);
+		this.contractors = new Contractors(database, clock);
 	}
 
 	renameHouse(token: string, name: string) {

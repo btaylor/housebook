@@ -47,3 +47,13 @@ export const signInAttempts = sqliteTable(
 	},
 	(table) => [index('sign_in_attempts_member_time').on(table.memberId, table.attemptedAt)]
 );
+
+export const contractors = sqliteTable('contractors', {
+	id: text().primaryKey(),
+	name: text().notNull(),
+	phone: text().notNull().default(''),
+	email: text().notNull().default(''),
+	trade: text().notNull().default(''),
+	notes: text().notNull().default(''),
+	archivedAt: integer({ mode: 'timestamp_ms' })
+});

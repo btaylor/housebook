@@ -1,11 +1,15 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "10116fa7-804a-44be-b246-2f08689d1d7c",
+  "id": "0a7319e7-3864-4f79-88cb-fe0ac418c2e0",
   "prevIds": [
     "a4cf5b81-3f67-4a53-9e7c-ac39f8b459a3"
   ],
   "ddl": [
+    {
+      "name": "contractors",
+      "entityType": "tables"
+    },
     {
       "name": "houses",
       "entityType": "tables"
@@ -19,8 +23,74 @@
       "entityType": "tables"
     },
     {
-      "name": "sign_in_attempts",
-      "entityType": "tables"
+      "table": "contractors",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "phone",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "email",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "trade",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "notes",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "archivedAt",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
     },
     {
       "table": "houses",
@@ -104,16 +174,6 @@
     },
     {
       "table": "members",
-      "name": "signInLockedUntil",
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "members",
       "name": "createdAt",
       "type": "integer",
       "notNull": true,
@@ -173,46 +233,6 @@
       "entityType": "columns"
     },
     {
-      "table": "sessions",
-      "name": "deviceHint",
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": "'Unknown browser · Unknown device'",
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "sign_in_attempts",
-      "name": "id",
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "sign_in_attempts",
-      "name": "memberId",
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "sign_in_attempts",
-      "name": "attemptedAt",
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
       "table": "members",
       "name": "members_email_unique",
       "columns": [
@@ -222,24 +242,6 @@
         }
       ],
       "isUnique": true,
-      "where": null,
-      "origin": "manual",
-      "entityType": "indexes"
-    },
-    {
-      "table": "sign_in_attempts",
-      "name": "sign_in_attempts_member_time",
-      "columns": [
-        {
-          "value": "memberId",
-          "isExpression": false
-        },
-        {
-          "value": "attemptedAt",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
       "where": null,
       "origin": "manual",
       "entityType": "indexes"
@@ -260,19 +262,13 @@
       "entityType": "fks"
     },
     {
-      "table": "sign_in_attempts",
-      "name": "fk_sign_in_attempts_memberId_members_id_fk",
+      "table": "contractors",
+      "name": "contractors_pk",
       "columns": [
-        "memberId"
-      ],
-      "tableTo": "members",
-      "columnsTo": [
         "id"
       ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
       "nameExplicit": false,
-      "entityType": "fks"
+      "entityType": "pks"
     },
     {
       "table": "houses",
@@ -297,15 +293,6 @@
       "name": "sessions_pk",
       "columns": [
         "tokenHash"
-      ],
-      "nameExplicit": false,
-      "entityType": "pks"
-    },
-    {
-      "table": "sign_in_attempts",
-      "name": "sign_in_attempts_pk",
-      "columns": [
-        "id"
       ],
       "nameExplicit": false,
       "entityType": "pks"
