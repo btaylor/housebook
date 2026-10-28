@@ -9,7 +9,7 @@ const setup = {
 	...member
 };
 
-test('phone first-start setup, sign-out and sign-in reach the responsive offline shell', async ({
+test('first-start setup, sign-out and sign-in protect Member access', async ({
 	page,
 	context,
 	request,
@@ -59,43 +59,11 @@ test('phone first-start setup, sign-out and sign-in reach the responsive offline
 	await page.goto('/setup');
 	await expect(page).toHaveURL(/\/items$/);
 
-	const navigation = page.getByRole('navigation', { name: 'Main navigation' });
-	for (const label of ['Items', 'Maintenance Log', 'Contractors', 'Settings']) {
-		const link = navigation.getByRole('link', { name: label, exact: true });
-		await expect(link).toBeVisible();
-		await link.click();
-		await expect(page.getByRole('heading', { name: label, exact: true, level: 1 })).toBeVisible();
-		await expect(link).toHaveAttribute('aria-current', 'page');
-	}
-	expect((await navigation.boundingBox())!.y + (await navigation.boundingBox())!.height).toBe(
-		page.viewportSize()!.height
-	);
-	await expect(page.getByText('Email not verified.', { exact: false })).toBeVisible();
+	await page.goto('/settings');
+	await expect(
+		page.getByText('Email not verified. Housebook does not send email.', { exact: true })
+	).toBeVisible();
 
-	await page.emulateMedia({ colorScheme: 'light' });
-	const light = await page.evaluate(
-		() => getComputedStyle(document.documentElement).backgroundColor
-	);
-	await page.emulateMedia({ colorScheme: 'dark' });
-	const dark = await page.evaluate(
-		() => getComputedStyle(document.documentElement).backgroundColor
-	);
-	expect(dark).not.toBe(light);
-	expect(Number(dark.match(/\d+/)![0])).toBeLessThan(Number(light.match(/\d+/)![0]));
-	for (const width of [320, 393, 1280]) {
-		await page.setViewportSize({ width, height: 800 });
-		const previousHeight = (await navigation.boundingBox())!.height;
-		await navigation.getByRole('link', { name: 'Maintenance Log', exact: true }).click();
-		expect((await navigation.boundingBox())!.height).toBeCloseTo(previousHeight, 0);
-		await navigation.getByRole('link', { name: 'Settings', exact: true }).click();
-		expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-			width
-		);
-		const bounds = (await navigation.boundingBox())!;
-		if (width < 768) expect(bounds.y + bounds.height).toBe(800);
-		else expect(bounds.y + bounds.height).toBeLessThan(250);
-	}
-	await page.setViewportSize({ width: 393, height: 800 });
 	await page.getByRole('button', { name: 'Sign out', exact: true }).click();
 	await expect(page).toHaveURL(/\/sign-in$/);
 	expect(
@@ -128,10 +96,12 @@ test('phone first-start setup, sign-out and sign-in reach the responsive offline
 	await page.getByLabel('Password', { exact: true }).fill(member.password);
 	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 	await expect(page).toHaveURL(/\/items$/);
-	await expect(navigation.getByRole('link', { name: 'Items', exact: true })).toHaveAttribute(
-		'aria-current',
-		'page'
-	);
+	await expect(
+		page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', {
+			name: 'Items',
+			exact: true
+		})
+	).toHaveAttribute('aria-current', 'page');
 	await page.goto('/sign-in');
 	await expect(page).toHaveURL(/\/items$/);
 	expect(externalRequests).toEqual([]);

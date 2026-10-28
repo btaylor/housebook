@@ -65,7 +65,20 @@ must only accept traffic from that trusted proxy. Do not enable proxy headers on
 exposed installation. Direct HTTP ignores client-supplied transport headers.
 The cookie is HTTP-only, SameSite=Lax, and Secure only when the incoming scheme is HTTPS.
 SvelteKit checks the request origin for form submissions; this check remains enabled.
-The optional `HOUSEBOOK_URL` for future Invite/reset links is not used by sign-in.
+The optional `HOUSEBOOK_URL` for Invite links is not used by sign-in.
+
+## Members and Invites
+
+Settings lists the Household's Members and unused Invites. Create an Invite, then use
+Share Invite for your phone's share sheet or Copy link. On plain HTTP where clipboard
+access is unavailable, select and copy the displayed link manually. Housebook sends no email.
+Save or share the link when you create it; only its hash is stored.
+
+An Invite works once and expires after 7 days. You can revoke unused Invites in Settings.
+The invited person opens the link and enters their name, a unique email address
+(case does not matter), and a password of at least 12 characters. They join signed in.
+Set `HOUSEBOOK_URL=https://housebook.example` to use your public address in Invite links.
+Without it, Housebook uses the incoming request's origin.
 
 ## Items
 

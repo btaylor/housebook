@@ -6,6 +6,8 @@ export type DomainErrorCode =
 	| 'invalid-member-name'
 	| 'invalid-email'
 	| 'password-too-short'
+	| 'invalid-invite'
+	| 'member-not-found'
 	| 'invalid-credentials'
 	| 'sign-in-locked'
 	| 'session-required'
