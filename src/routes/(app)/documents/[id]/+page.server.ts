@@ -1,5 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { DomainError } from '../../../../lib/server/core';
+import { requireSession } from '../../../../lib/server/session-cookie';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals, params }) => {
@@ -13,9 +14,11 @@ export const load: PageServerLoad = ({ locals, params }) => {
 };
 
 export const actions: Actions = {
-	rename: async ({ locals, params, request }) => {
+	rename: async (event) => {
+		const { locals, params, request } = event;
 		const form = await request.formData();
 		const title = String(form.get('title') ?? '');
+		requireSession(event);
 		try {
 			locals.housebook.documents.rename(params.id, title);
 			return { message: 'Document renamed.' };
@@ -24,7 +27,9 @@ export const actions: Actions = {
 			throw cause;
 		}
 	},
-	delete: ({ locals, params }) => {
+	delete: (event) => {
+		const { locals, params } = event;
+		requireSession(event);
 		let itemId: string | null;
 		try {
 			itemId = locals.housebook.documents.get(params.id).itemId;

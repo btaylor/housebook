@@ -14,7 +14,7 @@ export const actions: Actions = {
 		let item;
 		try {
 			item = photo?.name
-				? await locals.housebook.items.createWithPhoto(values, photo)
+				? await locals.housebook.items.createWithPhoto(values, photo, () => requireSession(event))
 				: locals.housebook.items.create(values);
 		} catch (error) {
 			if (error instanceof DomainError) return fail(400, { message: error.message, values });

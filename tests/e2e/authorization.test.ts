@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
+import { resolve } from 'node:path';
 import { expect, type Browser, type Page } from '@playwright/test';
 import { test } from './app';
 
@@ -9,7 +11,11 @@ const mutations = [
 	'Item editing',
 	'Contractor creation',
 	'Contractor editing',
-	'Invite revocation'
+	'Invite revocation',
+	'Item creation with a photo',
+	'photo replacement',
+	'Document attachment',
+	'Document renaming'
 ] as const;
 
 for (const mutation of mutations) {
@@ -80,6 +86,33 @@ async function suspendedMutation(
 			form: { name: 'Willow Plumbing' },
 			headers
 		});
+		await page.request.post(`${item.url()}?/document`, {
+			multipart: {
+				title: 'Manual',
+				document: {
+					name: 'manual.pdf',
+					mimeType: 'application/pdf',
+					buffer: readFileSync(resolve('tests/fixtures/manual.pdf'))
+				}
+			},
+			headers
+		});
+		await page.goto(item.url());
+		const documentLink = page.getByRole('link', { name: 'Manual', exact: true });
+		await expect(documentLink).toHaveAttribute('href', /\/documents\//);
+		const documentUrl = await documentLink.getAttribute('href');
+		if (mutation === 'photo replacement') {
+			await page.request.post(`${item.url()}?/photo`, {
+				multipart: {
+					photo: {
+						name: 'item-photo.jpg',
+						mimeType: 'image/jpeg',
+						buffer: readFileSync(resolve('tests/fixtures/item-photo.jpg'))
+					}
+				},
+				headers
+			});
+		}
 		await page.goto('/maintenance-log/new');
 		const performer = await page
 			.getByRole('option', { name: 'Morgan', exact: true })
@@ -107,23 +140,50 @@ async function suspendedMutation(
 			'Item editing': `${new URL(item.url()).pathname}/edit`,
 			'Contractor creation': '/contractors/new',
 			'Contractor editing': `${new URL(contractor.url()).pathname}/edit`,
-			'Invite revocation': '/settings?/revokeInvite'
+			'Invite revocation': '/settings?/revokeInvite',
+			'Item creation with a photo': '/items/new',
+			'photo replacement': `${new URL(item.url()).pathname}?/photo`,
+			'Document attachment': `${new URL(item.url()).pathname}?/document`,
+			'Document renaming': `${documentUrl}?/rename`
 		};
-		const body = new URLSearchParams({
+		const fields = {
 			date: '2026-01-02',
 			notes: 'Unauthorized work',
 			performer: performer!,
 			name: 'Unauthorized entry',
 			category: 'HVAC',
-			id: inviteId
-		}).toString();
+			id: inviteId,
+			title: 'Unauthorized Document'
+		};
+		let body = Buffer.from(new URLSearchParams(fields).toString());
+		let contentType = 'application/x-www-form-urlencoded';
+		if (
+			['Item creation with a photo', 'photo replacement', 'Document attachment'].includes(mutation)
+		) {
+			const boundary = 'housebook-upload-boundary';
+			const name = mutation === 'Document attachment' ? 'document' : 'photo';
+			const parts = Object.entries(fields).map(([key, value]) =>
+				Buffer.from(
+					`--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`
+				)
+			);
+			body = Buffer.concat([
+				...parts,
+				Buffer.from(
+					`--${boundary}\r\nContent-Disposition: form-data; name="${name}"; filename="item-photo.png"\r\nContent-Type: image/png\r\n\r\n`
+				),
+				readFileSync(resolve('tests/fixtures/item-photo.png')),
+				Buffer.from(`\r\n--${boundary}--\r\n`)
+			]);
+			contentType = `multipart/form-data; boundary=${boundary}`;
+		}
 		const cookie = (await target.cookies()).map(({ name, value }) => `${name}=${value}`).join('; ');
-		const pending = httpRequest(`${app.url}${endpoints[mutation]}`, {
+		const pending = httpRequest(new URL(endpoints[mutation], app.url), {
 			method: 'POST',
 			headers: {
 				...headers,
 				cookie,
-				'content-type': 'application/x-www-form-urlencoded',
+				'content-type': contentType,
 				'content-length': Buffer.byteLength(body)
 			}
 		});
@@ -161,6 +221,14 @@ async function suspendedMutation(
 			await expect(page.getByRole('link', { name: /Unauthorized entry/ })).toHaveCount(0);
 			await page.goto(item.url());
 			await expect(page.getByRole('heading', { name: 'Furnace', exact: true })).toBeVisible();
+			await expect(page.getByRole('link', { name: 'Manual', exact: true })).toHaveCount(1);
+			await expect(
+				page.getByRole('link', { name: 'Unauthorized Document', exact: true })
+			).toHaveCount(0);
+			if (mutation === 'photo replacement') {
+				const photo = await page.request.get(`${item.url()}/photo`);
+				expect(await photo.body()).toEqual(readFileSync(resolve('tests/fixtures/item-photo.jpg')));
+			}
 			await page.goto('/contractors');
 			await expect(page.getByRole('link', { name: /Unauthorized entry/ })).toHaveCount(0);
 			await page.goto(contractor.url());

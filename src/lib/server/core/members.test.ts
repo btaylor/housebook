@@ -1,3 +1,5 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { afterEach, expect, test } from 'vitest';
 import { createHousebookHarness } from '../testing/harness';
 
@@ -187,4 +189,28 @@ test('removing yourself when another Member remains ends your sessions, not thei
 	expect(core.auth.validateSession(second.token)).toBeNull();
 	expect(core.auth.validateSession(first.token)?.member).toEqual(first.member);
 	expect(core.members.list()).toEqual([first.member]);
+});
+
+test('removal prevents in-flight photo and Document uploads from attaching or leaving files', async () => {
+	const { core, first, second } = await setup();
+	const item = core.items.create({ name: 'Furnace', category: 'HVAC' });
+	const upload = (name: string) =>
+		new File([new Uint8Array(readFileSync(resolve('tests/fixtures', name)))], name);
+	const authorize = () => core.auth.requireSession(second.token);
+	const pending = [
+		core.items.createWithPhoto(
+			{ name: 'Pump', category: 'plumbing' },
+			upload('item-photo.png'),
+			authorize
+		),
+		core.items.setPhoto(item.id, upload('item-photo.png'), authorize),
+		core.documents.addToItem(item.id, 'Manual', upload('manual.pdf'), authorize)
+	];
+	core.members.remove(first.token, second.member.id);
+	for (const result of await Promise.allSettled(pending)) {
+		expect(result).toMatchObject({ status: 'rejected', reason: { code: 'session-required' } });
+	}
+	expect(core.items.list()).toEqual([item]);
+	expect(core.documents.listForItem(item.id)).toEqual([]);
+	expect(readdirSync(join(harness.dataDirectory, 'files'))).toEqual([]);
 });
