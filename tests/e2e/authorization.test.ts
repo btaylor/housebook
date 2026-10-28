@@ -15,6 +15,7 @@ const mutations = [
 	'Item creation with a photo',
 	'photo replacement',
 	'Document attachment',
+	'Service Record Document attachment',
 	'Document renaming'
 ] as const;
 
@@ -144,6 +145,7 @@ async function suspendedMutation(
 			'Item creation with a photo': '/items/new',
 			'photo replacement': `${new URL(item.url()).pathname}?/photo`,
 			'Document attachment': `${new URL(item.url()).pathname}?/document`,
+			'Service Record Document attachment': `${new URL(record.url()).pathname}?/document`,
 			'Document renaming': `${documentUrl}?/rename`
 		};
 		const fields = {
@@ -158,10 +160,15 @@ async function suspendedMutation(
 		let body = Buffer.from(new URLSearchParams(fields).toString());
 		let contentType = 'application/x-www-form-urlencoded';
 		if (
-			['Item creation with a photo', 'photo replacement', 'Document attachment'].includes(mutation)
+			[
+				'Item creation with a photo',
+				'photo replacement',
+				'Document attachment',
+				'Service Record Document attachment'
+			].includes(mutation)
 		) {
 			const boundary = 'housebook-upload-boundary';
-			const name = mutation === 'Document attachment' ? 'document' : 'photo';
+			const name = mutation.includes('Document attachment') ? 'document' : 'photo';
 			const parts = Object.entries(fields).map(([key, value]) =>
 				Buffer.from(
 					`--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`
@@ -217,6 +224,9 @@ async function suspendedMutation(
 			await expect(page.getByRole('link', { name: /Unauthorized work/ })).toHaveCount(0);
 			await page.goto(record.url());
 			await expect(page.getByText('Original work', { exact: true })).toBeVisible();
+			await expect(
+				page.getByRole('link', { name: 'Unauthorized Document', exact: true })
+			).toHaveCount(0);
 			await page.goto('/items');
 			await expect(page.getByRole('link', { name: /Unauthorized entry/ })).toHaveCount(0);
 			await page.goto(item.url());

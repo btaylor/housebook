@@ -127,24 +127,42 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync, dataDirectory
 						('existing-service-record', 'retired-item');
 			`);
 		}
+		if (
+			database
+				.prepare('PRAGMA table_info(members)')
+				.all()
+				.some(({ name }) => name === 'removedAt')
+		) {
+			database.exec(`
+				INSERT INTO members (id, name, email, passwordHash, removedAt, createdAt)
+					SELECT 'removed-member', 'Jamie', email, passwordHash, createdAt, createdAt
+					FROM members WHERE id = 'existing-member';
+				UPDATE service_records SET memberId = 'removed-member'
+					WHERE id = 'member-service-record';
+			`);
+		}
 		if (tables.includes('documents')) {
 			const directory = join(dataDirectory, 'files');
 			mkdirSync(directory);
 			for (const [id, name, contentType] of [
 				['existing-manual-file', 'manual.pdf', 'application/pdf'],
-				['existing-photo-file', 'item-photo.png', 'image/png']
+				['existing-photo-file', 'item-photo.png', 'image/png'],
+				['existing-receipt-file', 'manual.pdf', 'application/pdf']
 			]) {
 				const data = readFileSync(resolve('tests/fixtures', name));
-				writeFileSync(join(directory, name), data);
+				const storedName = `${id}-${name}`;
+				writeFileSync(join(directory, storedName), data);
 				database
 					.prepare(
 						'INSERT INTO stored_files (id, originalName, storedName, contentType, size) VALUES (?, ?, ?, ?, ?)'
 					)
-					.run(id, name, name, contentType, data.length);
+					.run(id, name, storedName, contentType, data.length);
 			}
 			database.exec(`
 				INSERT INTO documents (id, title, fileId, itemId)
 					VALUES ('existing-manual', 'Boiler manual', 'existing-manual-file', 'current-item');
+				INSERT INTO documents (id, title, fileId, serviceRecordId)
+					VALUES ('existing-receipt', 'Service receipt', 'existing-receipt-file', 'existing-service-record');
 				UPDATE items SET photoId = 'existing-photo-file' WHERE id = 'current-item';
 			`);
 		}
@@ -208,10 +226,15 @@ test('preserves existing data and a pre-migration backup when upgrading the pack
 		).resolves.toHaveProperty('member.id', 'existing-member');
 		expect(harness.core.invites.isValid('existing-invite-token')).toBe(true);
 		expect(harness.core.auth.isPasswordResetValid('existing-reset-token')).toBe(true);
+		expect(harness.core.members.list()).toEqual([
+			{ id: 'existing-member', name: 'Morgan', email: 'morgan@example.com' }
+		]);
+		expect(harness.core.serviceRecords.get('member-service-record').member?.name).toBe('Jamie');
 		expect(harness.core.serviceRecords.get('existing-service-record')).toMatchObject({
 			costCents: 12345,
 			contractorId: 'active-contractor',
-			items: [{ id: 'current-item' }, { id: 'retired-item' }]
+			items: [{ id: 'current-item' }, { id: 'retired-item' }],
+			documents: [{ id: 'existing-receipt', title: 'Service receipt' }]
 		});
 		expect(harness.core.documents.listForItem('current-item')).toEqual([
 			{
@@ -224,6 +247,7 @@ test('preserves existing data and a pre-migration backup when upgrading the pack
 		]);
 		for (const [opened, fixture] of [
 			[harness.core.documents.open('existing-manual'), 'manual.pdf'],
+			[harness.core.documents.open('existing-receipt'), 'manual.pdf'],
 			[harness.core.items.openPhoto('current-item'), 'item-photo.png']
 		] as const) {
 			expect(Buffer.concat(await opened.stream.toArray())).toEqual(

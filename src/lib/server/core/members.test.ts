@@ -253,6 +253,12 @@ test('removing yourself when another Member remains ends your sessions, not thei
 test('removal prevents in-flight photo and Document uploads from attaching or leaving files', async () => {
 	const { core, first, second } = await setup();
 	const item = core.items.create({ name: 'Furnace', category: 'HVAC' });
+	const record = core.serviceRecords.create({
+		date: '2026-01-01',
+		notes: 'Changed filter',
+		memberId: first.member.id,
+		itemIds: [item.id]
+	});
 	const upload = (name: string) =>
 		new File([new Uint8Array(readFileSync(resolve('tests/fixtures', name)))], name);
 	const authorize = () => core.auth.requireSession(second.token);
@@ -263,7 +269,8 @@ test('removal prevents in-flight photo and Document uploads from attaching or le
 			authorize
 		),
 		core.items.setPhoto(item.id, upload('item-photo.png'), authorize),
-		core.documents.addToItem(item.id, 'Manual', upload('manual.pdf'), authorize)
+		core.documents.addToItem(item.id, 'Manual', upload('manual.pdf'), authorize),
+		core.documents.addToServiceRecord(record.id, 'Receipt', upload('manual.pdf'), authorize)
 	];
 	core.members.remove(first.token, second.member.id);
 	for (const result of await Promise.allSettled(pending)) {
@@ -271,5 +278,6 @@ test('removal prevents in-flight photo and Document uploads from attaching or le
 	}
 	expect(core.items.list()).toEqual([item]);
 	expect(core.documents.listForItem(item.id)).toEqual([]);
+	expect(core.serviceRecords.get(record.id).documents).toEqual([]);
 	expect(readdirSync(join(harness.dataDirectory, 'files'))).toEqual([]);
 });

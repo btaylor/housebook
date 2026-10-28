@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import DocumentList from '../../../../lib/DocumentList.svelte';
+	import DocumentUpload from '../../../../lib/DocumentUpload.svelte';
 	import { formatCost } from '../../../../lib/service-records';
 	import type { PageProps } from './$types';
-	let { data }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 </script>
 
 <svelte:head><title>Service Record · {data.record.date} · Housebook</title></svelte:head>
@@ -54,10 +56,20 @@
 	<h2 class="service-notes-heading">Notes</h2>
 	<p class="item-notes">{data.record.notes || 'No notes recorded.'}</p>
 </section>
+<section class="item-details">
+	<h2>Documents</h2>
+	{#if form?.error}<p class="form-error upload-feedback" role="alert">{form.error}</p>{/if}
+	{#if form?.message}<p class="form-success upload-feedback" role="status">{form.message}</p>{/if}
+	<DocumentList documents={data.record.documents} />
+	<DocumentUpload title={form?.title} />
+</section>
 <details class="delete-record">
 	<summary>Delete Service Record</summary>
 	<form method="POST" action="?/delete">
-		<p class="hint">This permanently deletes the Service Record from all linked Items.</p>
+		<p class="hint">
+			This permanently deletes the Service Record from all linked Items and deletes its Documents
+			and their files.
+		</p>
 		<button class="secondary" type="submit">Confirm deletion</button>
 	</form>
 </details>

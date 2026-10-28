@@ -50,7 +50,8 @@ export const documents = sqliteTable(
 			'document_one_owner',
 			sql`(${table.itemId} IS NOT NULL) + (${table.serviceRecordId} IS NOT NULL) = 1`
 		),
-		index('documents_item').on(table.itemId)
+		index('documents_item').on(table.itemId),
+		index('documents_service_record').on(table.serviceRecordId)
 	]
 );
 

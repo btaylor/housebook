@@ -9,7 +9,8 @@
 	class="back-link"
 	href={data.document.itemId
 		? resolve('/(app)/items/[id]', { id: data.document.itemId })
-		: resolve('/(app)/items')}>← Item</a
+		: resolve('/(app)/maintenance-log/[id]', { id: data.document.serviceRecordId! })}
+	>← {data.document.itemId ? 'Item' : 'Service Record'}</a
 >
 <h1 class="document-title">{data.document.title}</h1>
 <p class="intro document-metadata">

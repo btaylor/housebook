@@ -2,11 +2,23 @@ import { randomUUID } from 'node:crypto';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
 import type { ServiceRecordInput } from '../../service-records';
-import { contractors, items, members, serviceRecordItems, serviceRecords } from '../schema';
+import {
+	contractors,
+	documents,
+	items,
+	members,
+	serviceRecordItems,
+	serviceRecords,
+	storedFiles
+} from '../schema';
 import { DomainError } from './errors';
+import type { Files } from './files';
 
 export class ServiceRecords {
-	constructor(private database: NodeSQLiteDatabase) {}
+	constructor(
+		private database: NodeSQLiteDatabase,
+		private files: Files
+	) {}
 
 	create(input: ServiceRecordInput) {
 		return this.database.transaction(() => {
@@ -88,17 +100,38 @@ export class ServiceRecords {
 			)
 			.orderBy(items.name, items.id)
 			.all();
+		const recordDocuments = this.database
+			.select({
+				serviceRecordId: documents.serviceRecordId,
+				id: documents.id,
+				title: documents.title,
+				originalName: storedFiles.originalName,
+				contentType: storedFiles.contentType,
+				size: storedFiles.size
+			})
+			.from(documents)
+			.innerJoin(storedFiles, eq(documents.fileId, storedFiles.id))
+			.where(
+				inArray(
+					documents.serviceRecordId,
+					rows.map(({ record }) => record.id)
+				)
+			)
+			.orderBy(documents.title, documents.id)
+			.all();
 		return rows.map(({ record, contractor, member }) => ({
 			...record,
 			contractor,
 			member,
-			items: links.filter((link) => link.serviceRecordId === record.id).map((link) => link.item)
+			items: links.filter((link) => link.serviceRecordId === record.id).map((link) => link.item),
+			documents: recordDocuments.filter((document) => document.serviceRecordId === record.id)
 		}));
 	}
 
 	delete(id: string) {
 		this.get(id);
 		this.database.delete(serviceRecords).where(eq(serviceRecords.id, id)).run();
+		this.files.removeUnused();
 	}
 
 	private validate(

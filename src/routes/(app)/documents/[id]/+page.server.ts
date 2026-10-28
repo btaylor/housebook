@@ -30,14 +30,17 @@ export const actions: Actions = {
 	delete: (event) => {
 		const { locals, params } = event;
 		requireSession(event);
-		let itemId: string | null;
+		let destination: string;
 		try {
-			itemId = locals.housebook.documents.get(params.id).itemId;
+			const document = locals.housebook.documents.get(params.id);
+			destination = document.itemId
+				? `/items/${document.itemId}`
+				: `/maintenance-log/${document.serviceRecordId}`;
 			locals.housebook.documents.delete(params.id);
 		} catch (cause) {
 			if (cause instanceof DomainError) return fail(404, { error: cause.message });
 			throw cause;
 		}
-		redirect(303, itemId ? `/items/${itemId}` : '/items');
+		redirect(303, destination);
 	}
 };
