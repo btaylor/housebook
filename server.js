@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+process.env.BODY_SIZE_LIMIT ??= '27M';
 
 const proxyProtocolHeader = process.env.PROTOCOL_HEADER;
 const internalProtocolHeader = 'x-housebook-transport';

@@ -1,0 +1,1089 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "7be1dccf-77a1-4442-9425-7a76244a8c58",
+  "prevIds": [
+    "e64ea7f2-24a1-47c8-9f42-4b9c97905d88"
+  ],
+  "ddl": [
+    {
+      "name": "contractors",
+      "entityType": "tables"
+    },
+    {
+      "name": "documents",
+      "entityType": "tables"
+    },
+    {
+      "name": "houses",
+      "entityType": "tables"
+    },
+    {
+      "name": "invites",
+      "entityType": "tables"
+    },
+    {
+      "name": "items",
+      "entityType": "tables"
+    },
+    {
+      "name": "members",
+      "entityType": "tables"
+    },
+    {
+      "name": "service_record_items",
+      "entityType": "tables"
+    },
+    {
+      "name": "service_records",
+      "entityType": "tables"
+    },
+    {
+      "name": "sessions",
+      "entityType": "tables"
+    },
+    {
+      "name": "sign_in_attempts",
+      "entityType": "tables"
+    },
+    {
+      "name": "stored_files",
+      "entityType": "tables"
+    },
+    {
+      "table": "contractors",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "phone",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "email",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "trade",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "notes",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "contractors",
+      "name": "archivedAt",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "documents",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "documents",
+      "name": "title",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "documents",
+      "name": "fileId",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "documents",
+      "name": "itemId",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "documents",
+      "name": "serviceRecordId",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "houses",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": "1",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "houses",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "houses",
+      "name": "currency",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "houses",
+      "name": "createdAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "tokenHash",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "createdBy",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "createdAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "expiresAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "usedAt",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "invites",
+      "name": "revokedAt",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "category",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "location",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "make",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "model",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "serialNumber",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "installDate",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "warrantyEndDate",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "notes",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "retiredDate",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "items",
+      "name": "photoId",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "members",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "members",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "members",
+      "name": "email",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "members",
+      "name": "passwordHash",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "members",
+      "name": "signInLockedUntil",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "members",
+      "name": "createdAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_record_items",
+      "name": "serviceRecordId",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_record_items",
+      "name": "itemId",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "date",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "notes",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "costCents",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "contractorId",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "memberId",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "tokenHash",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "memberId",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "createdAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "lastSeenAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "expiresAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "deviceHint",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'Unknown browser · Unknown device'",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sign_in_attempts",
+      "name": "id",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sign_in_attempts",
+      "name": "memberId",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sign_in_attempts",
+      "name": "attemptedAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "stored_files",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "stored_files",
+      "name": "originalName",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "stored_files",
+      "name": "storedName",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "stored_files",
+      "name": "contentType",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "stored_files",
+      "name": "size",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "documents",
+      "name": "documents_item",
+      "columns": [
+        {
+          "value": "itemId",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "members",
+      "name": "members_email_unique",
+      "columns": [
+        {
+          "value": "lower(\"email\")",
+          "isExpression": true
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "service_record_items",
+      "name": "service_record_items_item",
+      "columns": [
+        {
+          "value": "itemId",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "service_records",
+      "name": "service_records_date",
+      "columns": [
+        {
+          "value": "date",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "service_records",
+      "name": "service_records_contractor",
+      "columns": [
+        {
+          "value": "contractorId",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "sign_in_attempts",
+      "name": "sign_in_attempts_member_time",
+      "columns": [
+        {
+          "value": "memberId",
+          "isExpression": false
+        },
+        {
+          "value": "attemptedAt",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "documents",
+      "name": "fk_documents_fileId_stored_files_id_fk",
+      "columns": [
+        "fileId"
+      ],
+      "tableTo": "stored_files",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "documents",
+      "name": "fk_documents_itemId_items_id_fk",
+      "columns": [
+        "itemId"
+      ],
+      "tableTo": "items",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "documents",
+      "name": "fk_documents_serviceRecordId_service_records_id_fk",
+      "columns": [
+        "serviceRecordId"
+      ],
+      "tableTo": "service_records",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "invites",
+      "name": "fk_invites_createdBy_members_id_fk",
+      "columns": [
+        "createdBy"
+      ],
+      "tableTo": "members",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "items",
+      "name": "fk_items_photoId_stored_files_id_fk",
+      "columns": [
+        "photoId"
+      ],
+      "tableTo": "stored_files",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "service_record_items",
+      "name": "fk_service_record_items_serviceRecordId_service_records_id_fk",
+      "columns": [
+        "serviceRecordId"
+      ],
+      "tableTo": "service_records",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "service_record_items",
+      "name": "fk_service_record_items_itemId_items_id_fk",
+      "columns": [
+        "itemId"
+      ],
+      "tableTo": "items",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "service_records",
+      "name": "fk_service_records_contractorId_contractors_id_fk",
+      "columns": [
+        "contractorId"
+      ],
+      "tableTo": "contractors",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "service_records",
+      "name": "fk_service_records_memberId_members_id_fk",
+      "columns": [
+        "memberId"
+      ],
+      "tableTo": "members",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "sessions",
+      "name": "fk_sessions_memberId_members_id_fk",
+      "columns": [
+        "memberId"
+      ],
+      "tableTo": "members",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "sign_in_attempts",
+      "name": "fk_sign_in_attempts_memberId_members_id_fk",
+      "columns": [
+        "memberId"
+      ],
+      "tableTo": "members",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "service_record_items",
+      "name": "service_record_items_pk",
+      "columns": [
+        "serviceRecordId",
+        "itemId"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "contractors",
+      "name": "contractors_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "documents",
+      "name": "documents_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "houses",
+      "name": "houses_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "invites",
+      "name": "invites_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "items",
+      "name": "items_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "members",
+      "name": "members_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "service_records",
+      "name": "service_records_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "sessions",
+      "name": "sessions_pk",
+      "columns": [
+        "tokenHash"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "sign_in_attempts",
+      "name": "sign_in_attempts_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "stored_files",
+      "name": "stored_files_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "documents",
+      "name": "documents_fileId_unique",
+      "columns": [
+        "fileId"
+      ],
+      "nameExplicit": false,
+      "entityType": "uniques"
+    },
+    {
+      "table": "invites",
+      "name": "invites_tokenHash_unique",
+      "columns": [
+        "tokenHash"
+      ],
+      "nameExplicit": false,
+      "entityType": "uniques"
+    },
+    {
+      "table": "stored_files",
+      "name": "stored_files_storedName_unique",
+      "columns": [
+        "storedName"
+      ],
+      "nameExplicit": false,
+      "entityType": "uniques"
+    },
+    {
+      "table": "documents",
+      "name": "document_one_owner",
+      "value": "(\"itemId\" IS NOT NULL) + (\"serviceRecordId\" IS NOT NULL) = 1",
+      "entityType": "checks"
+    },
+    {
+      "table": "houses",
+      "name": "single_house",
+      "value": "\"id\" = 1",
+      "entityType": "checks"
+    },
+    {
+      "table": "service_records",
+      "name": "service_record_performer",
+      "value": "(\"contractorId\" IS NOT NULL) != (\"memberId\" IS NOT NULL)",
+      "entityType": "checks"
+    },
+    {
+      "table": "service_records",
+      "name": "service_record_cost",
+      "value": "\"costCents\" IS NULL OR (typeof(\"costCents\") = 'integer' AND \"costCents\" BETWEEN 0 AND 9007199254740991)",
+      "entityType": "checks"
+    }
+  ],
+  "renames": []
+}

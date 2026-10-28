@@ -13,4 +13,5 @@
 	values={form?.values ?? { name: '', category: '' }}
 	message={form?.message}
 	submitLabel="Add Item"
+	includePhoto
 />

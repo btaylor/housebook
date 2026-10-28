@@ -36,7 +36,8 @@ describe('Items', () => {
 			...fullItem,
 			id: expect.any(String),
 			name: 'Water heater',
-			retiredDate: null
+			retiredDate: null,
+			photoId: null
 		});
 		const edited = {
 			name: 'Dishwasher',
@@ -74,7 +75,8 @@ describe('Items', () => {
 				installDate: null,
 				warrantyEndDate: null,
 				notes: null,
-				retiredDate: null
+				retiredDate: null,
+				photoId: null
 			});
 			expect(core.items.get(item.id)?.warrantyStatus).toBeNull();
 		}

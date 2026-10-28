@@ -26,7 +26,14 @@ export type DomainErrorCode =
 	| 'invalid-service-record-date'
 	| 'invalid-service-record-performer'
 	| 'invalid-service-record-cost'
-	| 'contractor-archived';
+	| 'contractor-archived'
+	| 'document-not-found'
+	| 'invalid-document-title'
+	| 'upload-required'
+	| 'unsupported-file-type'
+	| 'file-too-large'
+	| 'invalid-file'
+	| 'photo-required';
 
 export class DomainError extends Error {
 	constructor(

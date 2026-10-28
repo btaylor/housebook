@@ -88,6 +88,15 @@ warranty end date, and notes are optional. Search by name and filter by category
 Dates stay as calendar dates, without times or time zones. Warranty status uses the core clock's
 UTC calendar day: it stays active through the end date and ends the next day.
 An Item without a warranty end date shows “No warranty end date recorded,” not an active warranty.
+Add a main photo when creating an Item, or take/upload one from its page. Replace or remove it
+without changing the Item's details. Attach Documents with a title, then view, download, rename,
+or delete them. PDFs, JPEGs, PNGs, and HEIC photos are accepted up to 25 MB (25 × 1024 × 1024 bytes).
+Main photos accept images only. HEIC uploads become JPEGs using bundled pure JavaScript;
+no system image libraries or runtime network access are required.
+Stored files use generated names under the data directory's `files/` folder.
+Deleting a Document or replacing/removing a photo removes the old stored file.
+The built server accepts request bodies up to 27 MB to allow multipart overhead;
+`BODY_SIZE_LIMIT` overrides that transport limit. Set reverse-proxy limits to at least 27 MB.
 
 ## Maintenance Log
 
@@ -131,7 +140,7 @@ Run only one Housebook process against a data directory.
 ## Backups
 
 Back up the **entire `data/` directory** mounted at `/data`: it holds `housebook.sqlite`,
-SQLite sidecar files, migration backups, and future Document files.
+SQLite sidecar files, migration backups, Documents, and Item photos.
 Stop Housebook before copying the directory, then start it again:
 
 ```sh
