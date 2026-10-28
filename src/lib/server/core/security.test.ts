@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterEach, expect, test } from 'vitest';
 import { members, sessions, signInAttempts } from '../schema';
 import { createHousebookHarness } from '../testing/harness';
@@ -189,6 +189,41 @@ test('profile edits normalize own details and reject another Member’s email wi
 	expect(
 		harness.core.database.select().from(members).where(eq(members.id, 'other-member')).get()?.email
 	).toBe('riley@example.com');
+});
+
+test('maps an email conflict introduced during the update to email-in-use without partial changes', async () => {
+	const { harness, session } = await setUp();
+	harness.core.database.run(sql`
+		CREATE TRIGGER conflicting_email BEFORE UPDATE OF email ON members
+		BEGIN
+			INSERT INTO members (id, name, email, passwordHash, createdAt)
+			SELECT 'late-member', 'Riley', NEW.email, passwordHash, createdAt
+			FROM members WHERE id = OLD.id;
+		END
+	`);
+	expect(() =>
+		harness.core.auth.updateProfile(session.token, { name: 'Changed', email: 'new@example.com' })
+	).toThrow(expect.objectContaining({ code: 'email-in-use' }));
+	expect(harness.core.auth.validateSession(session.token)?.member).toEqual(session.member);
+	expect(harness.core.database.select().from(members).all()).toHaveLength(1);
+});
+
+test('preserves unrelated database failures when updating a profile', async () => {
+	const { harness, session } = await setUp();
+	harness.core.database.run(sql`
+		CREATE TRIGGER blocked_profile BEFORE UPDATE ON members
+		BEGIN
+			SELECT RAISE(ABORT, 'profile-write-blocked');
+		END
+	`);
+	expect(() =>
+		harness.core.auth.updateProfile(session.token, { name: 'Changed', email: 'new@example.com' })
+	).toThrow(
+		expect.objectContaining({
+			cause: expect.objectContaining({ message: 'profile-write-blocked' })
+		})
+	);
+	expect(harness.core.auth.validateSession(session.token)?.member).toEqual(session.member);
 });
 
 test('active-session summaries contain hints and last-seen times but no credentials or other Members', async () => {

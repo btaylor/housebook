@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import { and, count, desc, eq, gt, lte, ne, sql } from 'drizzle-orm';
+import { and, count, desc, DrizzleQueryError, eq, gt, lte, sql } from 'drizzle-orm';
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
 import { houses, members, sessions, signInAttempts } from '../schema';
 import { currencies } from './currencies';
@@ -55,6 +55,7 @@ interface SetupInput {
 
 const sessionLifetime = 30 * 24 * 60 * 60 * 1000;
 const signInWindow = 15 * 60 * 1000;
+const sqliteConstraintUnique = 2067;
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
 const memberFields = { id: members.id, name: members.name, email: members.email };
 function validatePassword(password: string) {
@@ -267,17 +268,21 @@ class Auth {
 	updateProfile(token: string, input: { name: string; email: string }): Member {
 		const { member } = this.requireSession(token);
 		const profile = normalizeProfile(input.name, input.email);
-		return this.database.transaction(() => {
-			const duplicate = this.database
-				.select({ id: members.id })
-				.from(members)
-				.where(and(eq(sql`lower(${members.email})`, profile.email), ne(members.id, member.id)))
-				.get();
-			if (duplicate)
-				throw new DomainError('email-in-use', 'Another Member uses that email address.');
+		try {
 			this.database.update(members).set(profile).where(eq(members.id, member.id)).run();
-			return { id: member.id, ...profile };
-		});
+		} catch (error) {
+			const cause = error instanceof DrizzleQueryError ? error.cause : error;
+			if (
+				cause instanceof Error &&
+				'errcode' in cause &&
+				cause.errcode === sqliteConstraintUnique &&
+				cause.message === "UNIQUE constraint failed: index 'members_email_unique'"
+			) {
+				throw new DomainError('email-in-use', 'Another Member uses that email address.');
+			}
+			throw error;
+		}
+		return { id: member.id, ...profile };
 	}
 
 	async changePassword(token: string, currentPassword: string, newPassword: string) {
