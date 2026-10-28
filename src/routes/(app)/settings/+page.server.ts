@@ -4,6 +4,8 @@ import { sessionCookie } from '../../../lib/server/session-cookie';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals, cookies }) => ({
+	members: locals.housebook.members.list(),
+	invites: locals.housebook.invites.list(),
 	sessions: locals.housebook.auth.listSessions(cookies.get(sessionCookie) ?? '')
 });
 
@@ -14,6 +16,18 @@ function formError(error: unknown, section: string) {
 }
 
 export const actions: Actions = {
+	createInvite: ({ locals, url }) => ({
+		invite: locals.housebook.invites.create(
+			locals.member!.id,
+			url.origin,
+			process.env.HOUSEBOOK_URL
+		)
+	}),
+	revokeInvite: async ({ locals, request }) => {
+		const form = await request.formData();
+		locals.housebook.invites.revoke(String(form.get('id') ?? ''));
+		return { revoked: true };
+	},
 	profile: async ({ locals, cookies, request }) => {
 		const form = await request.formData();
 		try {

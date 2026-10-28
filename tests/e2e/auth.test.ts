@@ -70,7 +70,9 @@ test('phone first-start setup, sign-out and sign-in reach the responsive offline
 	expect((await navigation.boundingBox())!.y + (await navigation.boundingBox())!.height).toBe(
 		page.viewportSize()!.height
 	);
-	await expect(page.getByText('Email not verified.', { exact: false })).toBeVisible();
+	await expect(
+		page.getByText('Email not verified. Housebook does not send email.', { exact: true })
+	).toBeVisible();
 
 	await page.emulateMedia({ colorScheme: 'light' });
 	const light = await page.evaluate(
