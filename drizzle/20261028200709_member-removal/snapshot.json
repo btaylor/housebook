@@ -1,9 +1,9 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "0d88590c-be31-42a4-8913-9712e29785de",
+  "id": "618f0b8e-f4df-49d6-90de-21c0c5415fef",
   "prevIds": [
-    "7be1dccf-77a1-4442-9425-7a76244a8c58"
+    "58384ac0-b44f-4518-9fae-99dce95764c7"
   ],
   "ddl": [
     {
@@ -28,6 +28,10 @@
     },
     {
       "name": "members",
+      "entityType": "tables"
+    },
+    {
+      "name": "password_resets",
       "entityType": "tables"
     },
     {
@@ -471,6 +475,76 @@
       "entityType": "columns"
     },
     {
+      "table": "password_resets",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "password_resets",
+      "name": "tokenHash",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "password_resets",
+      "name": "memberId",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "password_resets",
+      "name": "createdBy",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "password_resets",
+      "name": "createdAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "password_resets",
+      "name": "expiresAt",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "password_resets",
+      "name": "usedAt",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
       "table": "service_record_items",
       "name": "serviceRecordId",
       "type": "text",
@@ -854,6 +928,36 @@
       "entityType": "fks"
     },
     {
+      "table": "password_resets",
+      "name": "fk_password_resets_memberId_members_id_fk",
+      "columns": [
+        "memberId"
+      ],
+      "tableTo": "members",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "password_resets",
+      "name": "fk_password_resets_createdBy_members_id_fk",
+      "columns": [
+        "createdBy"
+      ],
+      "tableTo": "members",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
       "table": "service_record_items",
       "name": "fk_service_record_items_serviceRecordId_service_records_id_fk",
       "columns": [
@@ -1008,6 +1112,15 @@
       "entityType": "pks"
     },
     {
+      "table": "password_resets",
+      "name": "password_resets_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
       "table": "service_records",
       "name": "service_records_pk",
       "columns": [
@@ -1055,6 +1168,15 @@
     {
       "table": "invites",
       "name": "invites_tokenHash_unique",
+      "columns": [
+        "tokenHash"
+      ],
+      "nameExplicit": false,
+      "entityType": "uniques"
+    },
+    {
+      "table": "password_resets",
+      "name": "password_resets_tokenHash_unique",
       "columns": [
         "tokenHash"
       ],

@@ -1,6 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { eq } from 'drizzle-orm';
 import { afterEach, expect, test } from 'vitest';
+import { members } from '../schema';
 import { createHousebookHarness } from '../testing/harness';
 
 type Harness = Awaited<ReturnType<typeof createHousebookHarness>>;
@@ -182,6 +184,63 @@ test('sign-in and password changes in flight cannot restore access after removal
 	await expect(change).rejects.toMatchObject({ code: 'session-required' });
 	expect(core.auth.validateSession(second.token)).toBeNull();
 });
+
+test.each(['before redemption', 'during password hashing'])(
+	'removal %s invalidates outstanding reset links without affecting email reuse',
+	async (timing) => {
+		const { core, first, second } = await setup();
+		const reset = core.auth.createPasswordReset(
+			first.token,
+			second.member.id,
+			'http://housebook.lan'
+		);
+		const token = tokenOf(reset.url);
+		expect(core.auth.isPasswordResetValid(token)).toBe(true);
+		const pending =
+			timing === 'during password hashing'
+				? core.auth.resetPassword(token, 'a replacement password')
+				: undefined;
+		core.members.remove(first.token, second.member.id);
+		const removed = core.database
+			.select()
+			.from(members)
+			.where(eq(members.id, second.member.id))
+			.get();
+		await expect(
+			pending ?? core.auth.resetPassword(token, 'a replacement password')
+		).rejects.toMatchObject({ code: 'invalid-password-reset' });
+		expect(core.auth.isPasswordResetValid(token)).toBe(false);
+		for (const issue of [
+			() => core.auth.createPasswordReset(first.token, second.member.id, 'http://housebook.lan'),
+			() => core.auth.createPasswordResetForEmail(second.member.email, 'http://housebook.lan')
+		]) {
+			expect(issue).toThrow(expect.objectContaining({ code: 'member-not-found' }));
+		}
+		const replacement = await core.invites.redeem(
+			tokenOf(core.invites.create(first.member.id, 'http://housebook.lan').url),
+			{ memberName: 'Taylor', email: ' JAMIE@EXAMPLE.COM ', password: 'a new calm house' }
+		);
+		expect(replacement.member.id).not.toBe(second.member.id);
+		await expect(core.auth.resetPassword(token, 'a replacement password')).rejects.toMatchObject({
+			code: 'invalid-password-reset'
+		});
+		expect(
+			core.database.select().from(members).where(eq(members.id, second.member.id)).get()
+		).toEqual(removed);
+		expect(core.auth.validateSession(second.token)).toBeNull();
+		expect(core.auth.validateSession(replacement.token)?.member).toEqual(replacement.member);
+		await expect(
+			core.auth.signIn(replacement.member.email, 'a replacement password')
+		).rejects.toMatchObject({ code: 'invalid-credentials' });
+		await expect(
+			core.auth.signIn(replacement.member.email, 'a new calm house')
+		).resolves.toHaveProperty('member.id', replacement.member.id);
+		expect(
+			core.auth.createPasswordResetForEmail(' JAMIE@EXAMPLE.COM ', 'http://housebook.lan').memberId
+		).toBe(replacement.member.id);
+		expect(core.auth.validateSession(first.token)?.member).toEqual(first.member);
+	}
+);
 
 test('removing yourself when another Member remains ends your sessions, not theirs', async () => {
 	const { core, first, second } = await setup();

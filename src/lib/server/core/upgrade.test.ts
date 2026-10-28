@@ -35,7 +35,9 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync, dataDirectory
 		tables.join(',') ===
 			'contractors,houses,invites,items,members,service_record_items,service_records,sessions,sign_in_attempts' ||
 		tables.join(',') ===
-			'contractors,documents,houses,invites,items,members,service_record_items,service_records,sessions,sign_in_attempts,stored_files'
+			'contractors,documents,houses,invites,items,members,service_record_items,service_records,sessions,sign_in_attempts,stored_files' ||
+		tables.join(',') ===
+			'contractors,documents,houses,invites,items,members,password_resets,service_record_items,service_records,sessions,sign_in_attempts,stored_files'
 	) {
 		const now = Date.parse('2026-01-01T00:00:00Z');
 		database
@@ -95,6 +97,20 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync, dataDirectory
 				.run(
 					'existing-invite',
 					createHash('sha256').update('existing-invite-token').digest('hex'),
+					'existing-member',
+					now,
+					Date.parse('2030-01-01T00:00:00Z')
+				);
+		}
+		if (tables.includes('password_resets')) {
+			database
+				.prepare(
+					'INSERT INTO password_resets (id, tokenHash, memberId, createdBy, createdAt, expiresAt) VALUES (?, ?, ?, ?, ?, ?)'
+				)
+				.run(
+					'existing-reset',
+					createHash('sha256').update('existing-reset-token').digest('hex'),
+					'existing-member',
 					'existing-member',
 					now,
 					Date.parse('2030-01-01T00:00:00Z')
@@ -191,6 +207,7 @@ test('preserves existing data and a pre-migration backup when upgrading the pack
 			harness.core.auth.signIn('morgan@example.com', 'an existing password')
 		).resolves.toHaveProperty('member.id', 'existing-member');
 		expect(harness.core.invites.isValid('existing-invite-token')).toBe(true);
+		expect(harness.core.auth.isPasswordResetValid('existing-reset-token')).toBe(true);
 		expect(harness.core.serviceRecords.get('existing-service-record')).toMatchObject({
 			costCents: 12345,
 			contractorId: 'active-contractor',

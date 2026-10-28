@@ -469,7 +469,9 @@ class Auth {
 		const member = this.database
 			.select({ id: members.id })
 			.from(members)
-			.where(eq(sql`lower(${members.email})`, email.trim().toLowerCase()))
+			.where(
+				and(eq(sql`lower(${members.email})`, email.trim().toLowerCase()), isNull(members.removedAt))
+			)
 			.get();
 		if (!member) throw new DomainError('member-not-found', 'No Member uses that email address.');
 		return this.issuePasswordReset(member.id, requestOrigin, housebookUrl);
@@ -509,7 +511,7 @@ class Auth {
 		const member = this.database
 			.select(memberFields)
 			.from(members)
-			.where(eq(members.id, memberId))
+			.where(and(eq(members.id, memberId), isNull(members.removedAt)))
 			.get();
 		if (!member) throw new DomainError('member-not-found', 'Member not found.');
 		const { tokenHash, url } = createTokenLink('/reset-password', requestOrigin, housebookUrl);
@@ -532,9 +534,11 @@ class Auth {
 		return this.database
 			.select({ id: passwordResets.id, memberId: passwordResets.memberId })
 			.from(passwordResets)
+			.innerJoin(members, eq(members.id, passwordResets.memberId))
 			.where(
 				and(
 					eq(passwordResets.tokenHash, tokenHash(token)),
+					isNull(members.removedAt),
 					isNull(passwordResets.usedAt),
 					gt(passwordResets.expiresAt, this.clock())
 				)
