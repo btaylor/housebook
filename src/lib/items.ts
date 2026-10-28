@@ -5,6 +5,11 @@ export const itemCategories = [
 	'electrical',
 	'roof/exterior',
 	'yard',
+	'safety',
+	'windows/doors',
+	'interior',
+	'furniture',
+	'technology',
 	'other'
 ] as const;
 

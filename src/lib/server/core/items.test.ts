@@ -83,7 +83,7 @@ describe('Items', () => {
 	test.each([
 		[{ name: ' \t ' }, 'invalid-item-name'],
 		[{ category: '' }, 'invalid-item-category'],
-		[{ category: 'furniture' }, 'invalid-item-category'],
+		[{ category: 'unlisted' }, 'invalid-item-category'],
 		[{ installDate: '2025-02-29' }, 'invalid-item-date'],
 		[{ warrantyEndDate: '2026-04-31' }, 'invalid-item-date'],
 		[{ installDate: '2026-1-02' }, 'invalid-item-date'],
@@ -130,6 +130,24 @@ describe('Items', () => {
 			expect(cleared[field]).toBeNull();
 		expect(core.items.get(item.id)?.warrantyStatus).toBeNull();
 	});
+
+	test.each(['safety', 'windows/doors', 'interior', 'furniture', 'technology'])(
+		'persists creation and category changes to %s and filters by the saved category',
+		async (category) => {
+			const harness = await createHarness();
+			const created = harness.core.items.create({ name: 'Entry sensor', category });
+			const edited = harness.core.items.create({ name: 'Window sensor', category: 'other' });
+			harness.core.items.update(edited.id, { name: edited.name, category });
+			await harness.start();
+			expect(harness.core.items.get(created.id)?.category).toBe(category);
+			expect(harness.core.items.get(edited.id)?.category).toBe(category);
+			expect(harness.core.items.list({ category }).map((item) => item.id)).toEqual([
+				created.id,
+				edited.id
+			]);
+			expect(harness.core.items.list({ category: 'other' })).toEqual([]);
+		}
+	);
 
 	test('searches names, filters category, combines both and excludes Retired Items', async () => {
 		const { core } = await createHarness();

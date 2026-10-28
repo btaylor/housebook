@@ -9,6 +9,45 @@ const setup = {
 	password: 'a calm willow house'
 };
 
+test('phone Item categories persist through creation, editing and filtering', async ({
+	page,
+	app
+}) => {
+	await page.request.post('/setup', {
+		form: { ...setup, code: app.setupCode },
+		headers: { origin: app.url }
+	});
+	await page.goto('/items/new');
+	const addedCategories = ['safety', 'windows/doors', 'interior', 'furniture', 'technology'];
+	const options = await page
+		.getByLabel('Category', { exact: true })
+		.locator('option')
+		.allTextContents();
+	expect(options.slice(-6)).toEqual([...addedCategories, 'other']);
+	await page.getByLabel('Name', { exact: true }).fill('Entry sensor');
+	await page.getByLabel('Category', { exact: true }).selectOption('safety');
+	await page.getByRole('button', { name: 'Add Item', exact: true }).click();
+	await expect(page).toHaveURL(/\/items\/[^/]+$/);
+	const itemUrl = page.url();
+	for (const category of addedCategories) {
+		if (category !== 'safety') {
+			await page.getByRole('link', { name: 'Edit Item', exact: true }).click();
+			await page.getByLabel('Category', { exact: true }).selectOption(category);
+			await page.getByRole('button', { name: 'Save Item', exact: true }).click();
+		}
+		await expect(page).toHaveURL(itemUrl);
+		await page.reload();
+		await expect(page.locator('dd').first()).toHaveText(category);
+		await page.getByRole('link', { name: '← Items', exact: true }).click();
+		await page.getByLabel('Search by name').fill('sensor');
+		await page.getByLabel('Category', { exact: true }).selectOption(category);
+		await page.getByRole('button', { name: 'Find Items' }).click();
+		await expect(page.getByRole('status')).toHaveText('1 Item');
+		await page.getByRole('link', { name: `Entry sensor ${category}` }).click();
+		await expect(page).toHaveURL(itemUrl);
+	}
+});
+
 test('phone Item journey adds every field, finds by search and category, opens and edits', async ({
 	page,
 	app
