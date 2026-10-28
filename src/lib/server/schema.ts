@@ -43,7 +43,7 @@ export const documents = sqliteTable(
 			.unique()
 			.references(() => storedFiles.id),
 		itemId: text().references(() => items.id, { onDelete: 'cascade' }),
-		serviceRecordId: text()
+		serviceRecordId: text().references(() => serviceRecords.id, { onDelete: 'cascade' })
 	},
 	(table) => [
 		check(

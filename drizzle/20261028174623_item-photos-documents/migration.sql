@@ -6,6 +6,7 @@ CREATE TABLE `documents` (
 	`serviceRecordId` text,
 	CONSTRAINT `fk_documents_fileId_stored_files_id_fk` FOREIGN KEY (`fileId`) REFERENCES `stored_files`(`id`),
 	CONSTRAINT `fk_documents_itemId_items_id_fk` FOREIGN KEY (`itemId`) REFERENCES `items`(`id`) ON DELETE CASCADE,
+	CONSTRAINT `fk_documents_serviceRecordId_service_records_id_fk` FOREIGN KEY (`serviceRecordId`) REFERENCES `service_records`(`id`) ON DELETE CASCADE,
 	CONSTRAINT "document_one_owner" CHECK(("itemId" IS NOT NULL) + ("serviceRecordId" IS NOT NULL) = 1)
 );
 --> statement-breakpoint

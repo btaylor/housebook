@@ -1,9 +1,9 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "d7aeed14-2032-4719-bc98-b8dc9c0dacc4",
+  "id": "7be1dccf-77a1-4442-9425-7a76244a8c58",
   "prevIds": [
-    "9226f103-eed6-444f-9851-b47fee5cf837"
+    "e64ea7f2-24a1-47c8-9f42-4b9c97905d88"
   ],
   "ddl": [
     {
@@ -28,6 +28,14 @@
     },
     {
       "name": "members",
+      "entityType": "tables"
+    },
+    {
+      "name": "service_record_items",
+      "entityType": "tables"
+    },
+    {
+      "name": "service_records",
       "entityType": "tables"
     },
     {
@@ -453,6 +461,86 @@
       "entityType": "columns"
     },
     {
+      "table": "service_record_items",
+      "name": "serviceRecordId",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_record_items",
+      "name": "itemId",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "date",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "notes",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "costCents",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "contractorId",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "service_records",
+      "name": "memberId",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
       "table": "sessions",
       "name": "tokenHash",
       "type": "text",
@@ -621,6 +709,48 @@
       "entityType": "indexes"
     },
     {
+      "table": "service_record_items",
+      "name": "service_record_items_item",
+      "columns": [
+        {
+          "value": "itemId",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "service_records",
+      "name": "service_records_date",
+      "columns": [
+        {
+          "value": "date",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "service_records",
+      "name": "service_records_contractor",
+      "columns": [
+        {
+          "value": "contractorId",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
       "table": "sign_in_attempts",
       "name": "sign_in_attempts_member_time",
       "columns": [
@@ -669,6 +799,21 @@
       "entityType": "fks"
     },
     {
+      "table": "documents",
+      "name": "fk_documents_serviceRecordId_service_records_id_fk",
+      "columns": [
+        "serviceRecordId"
+      ],
+      "tableTo": "service_records",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
       "table": "invites",
       "name": "fk_invites_createdBy_members_id_fk",
       "columns": [
@@ -695,6 +840,66 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "service_record_items",
+      "name": "fk_service_record_items_serviceRecordId_service_records_id_fk",
+      "columns": [
+        "serviceRecordId"
+      ],
+      "tableTo": "service_records",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "service_record_items",
+      "name": "fk_service_record_items_itemId_items_id_fk",
+      "columns": [
+        "itemId"
+      ],
+      "tableTo": "items",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "service_records",
+      "name": "fk_service_records_contractorId_contractors_id_fk",
+      "columns": [
+        "contractorId"
+      ],
+      "tableTo": "contractors",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "service_records",
+      "name": "fk_service_records_memberId_members_id_fk",
+      "columns": [
+        "memberId"
+      ],
+      "tableTo": "members",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
       "nameExplicit": false,
       "entityType": "fks"
     },
@@ -727,6 +932,16 @@
       "onDelete": "CASCADE",
       "nameExplicit": false,
       "entityType": "fks"
+    },
+    {
+      "table": "service_record_items",
+      "name": "service_record_items_pk",
+      "columns": [
+        "serviceRecordId",
+        "itemId"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
     },
     {
       "table": "contractors",
@@ -776,6 +991,15 @@
     {
       "table": "members",
       "name": "members_pk",
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "service_records",
+      "name": "service_records_pk",
       "columns": [
         "id"
       ],
@@ -846,6 +1070,18 @@
       "table": "houses",
       "name": "single_house",
       "value": "\"id\" = 1",
+      "entityType": "checks"
+    },
+    {
+      "table": "service_records",
+      "name": "service_record_performer",
+      "value": "(\"contractorId\" IS NOT NULL) != (\"memberId\" IS NOT NULL)",
+      "entityType": "checks"
+    },
+    {
+      "table": "service_records",
+      "name": "service_record_cost",
+      "value": "\"costCents\" IS NULL OR (typeof(\"costCents\") = 'integer' AND \"costCents\" BETWEEN 0 AND 9007199254740991)",
       "entityType": "checks"
     }
   ],

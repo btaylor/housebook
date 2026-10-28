@@ -31,7 +31,9 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 		tables.join(',') === 'contractors,houses,members,sessions' ||
 		tables.join(',') === 'contractors,houses,members,sessions,sign_in_attempts' ||
 		tables.join(',') === 'contractors,houses,items,members,sessions,sign_in_attempts' ||
-		tables.join(',') === 'contractors,houses,invites,items,members,sessions,sign_in_attempts'
+		tables.join(',') === 'contractors,houses,invites,items,members,sessions,sign_in_attempts' ||
+		tables.join(',') ===
+			'contractors,houses,invites,items,members,service_record_items,service_records,sessions,sign_in_attempts'
 	) {
 		const now = Date.parse('2026-01-01T00:00:00Z');
 		database
@@ -96,6 +98,17 @@ async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 					Date.parse('2030-01-01T00:00:00Z')
 				);
 		}
+		if (tables.includes('service_records')) {
+			database.exec(`
+				INSERT INTO service_records (id, date, notes, costCents, contractorId, memberId)
+					VALUES ('existing-service-record', '2025-12-20', 'Annual maintenance', 12345,
+						'active-contractor', NULL),
+						('member-service-record', '2025-12-21', 'Checked filter', 0, NULL, 'existing-member');
+				INSERT INTO service_record_items (serviceRecordId, itemId)
+					VALUES ('existing-service-record', 'current-item'),
+						('existing-service-record', 'retired-item');
+			`);
+		}
 	} else {
 		throw new Error(`Add representative previous-version fixtures for: ${tables.join(', ')}`);
 	}
@@ -155,6 +168,11 @@ test('preserves existing data and a pre-migration backup when upgrading the pack
 			harness.core.auth.signIn('morgan@example.com', 'an existing password')
 		).resolves.toHaveProperty('member.id', 'existing-member');
 		expect(harness.core.invites.isValid('existing-invite-token')).toBe(true);
+		expect(harness.core.serviceRecords.get('existing-service-record')).toMatchObject({
+			costCents: 12345,
+			contractorId: 'active-contractor',
+			items: [{ id: 'current-item' }, { id: 'retired-item' }]
+		});
 
 		const backups = readdirSync(harness.dataDirectory).filter(
 			(name) => name.startsWith('housebook.pre-migration-') && name.endsWith('.sqlite')

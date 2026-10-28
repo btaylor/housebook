@@ -294,6 +294,68 @@ test('deleting an Item removes its photo and Documents but keeps another Item’
 	expect(value.core.documents.listForItem(second.id)).toHaveLength(1);
 });
 
+test('keeps Item files when Service Records prevent deletion, then cleans up after unlinking', async () => {
+	const value = await harness();
+	const item = await value.core.items.createWithPhoto(itemInput, upload('item-photo.png'));
+	const document = await value.core.documents.addToItem(item.id, 'Manual', upload('manual.pdf'));
+	const contractor = value.core.contractors.create({ name: 'Willow Plumbing' });
+	const record = value.core.serviceRecords.create({
+		date: '2026-01-01',
+		notes: 'Annual maintenance',
+		contractorId: contractor.id,
+		itemIds: [item.id]
+	});
+	const before = storedNames(value);
+	expect(() => value.core.items.delete(item.id)).toThrow(
+		expect.objectContaining({ code: 'item-has-service-records' })
+	);
+	expect(value.core.items.get(item.id)?.photoId).toBe(item.photoId);
+	expect(value.core.documents.listForItem(item.id).map(({ id }) => id)).toEqual([document.id]);
+	expect(storedNames(value)).toEqual(before);
+	const opened = value.core.items.openPhoto(item.id);
+	expect(Buffer.concat(await opened.stream.toArray())).toEqual(fixture('item-photo.png'));
+	value.core.serviceRecords.delete(record.id);
+	value.core.items.delete(item.id);
+	expect(value.core.items.get(item.id)).toBeNull();
+	expect(storedNames(value)).toEqual([]);
+});
+
+test('requires exactly one existing Item or Service Record owner for a Document', async () => {
+	const value = await harness();
+	const item = value.core.items.create(itemInput);
+	const document = await value.core.documents.addToItem(item.id, 'Manual', upload('manual.pdf'));
+	const contractor = value.core.contractors.create({ name: 'Willow Plumbing' });
+	const record = value.core.serviceRecords.create({
+		date: '2026-01-01',
+		notes: 'Annual maintenance',
+		contractorId: contractor.id
+	});
+	for (const owner of [
+		{ itemId: item.id, serviceRecordId: record.id },
+		{ itemId: null, serviceRecordId: null },
+		{ itemId: 'missing', serviceRecordId: null },
+		{ itemId: null, serviceRecordId: 'missing' }
+	]) {
+		expect(() =>
+			value.core.database.update(documents).set(owner).where(eq(documents.id, document.id)).run()
+		).toThrow();
+	}
+	value.core.database
+		.update(documents)
+		.set({ itemId: null, serviceRecordId: record.id })
+		.where(eq(documents.id, document.id))
+		.run();
+	await value.start();
+	value.core.items.delete(item.id);
+	expect(value.core.documents.get(document.id)).toMatchObject({
+		itemId: null,
+		serviceRecordId: record.id
+	});
+	const opened = value.core.documents.open(document.id);
+	expect(Buffer.concat(await opened.stream.toArray())).toEqual(fixture('manual.pdf'));
+	expect(storedNames(value)).toHaveLength(1);
+});
+
 test('does not leave files when an Item disappears during upload', async () => {
 	const value = await harness();
 	const item = value.core.items.create(itemInput);
