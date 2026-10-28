@@ -201,7 +201,7 @@ export class Housebook {
 		const files = new Files(database, dataDirectory);
 		this.items = new Items(database, clock, files);
 		this.documents = new Documents(database, files);
-		this.serviceRecords = new ServiceRecords(database);
+		this.serviceRecords = new ServiceRecords(database, files);
 	}
 	serviceRecordOptions(id?: string) {
 		const record = id ? this.serviceRecords.get(id) : null;

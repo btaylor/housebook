@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import DocumentList from '../../../../lib/DocumentList.svelte';
+	import DocumentUpload from '../../../../lib/DocumentUpload.svelte';
 	import ServiceRecordList from '../../../../lib/ServiceRecordList.svelte';
 	import PhotoInput from '../../../../lib/PhotoInput.svelte';
 	import type { PageProps } from './$types';
@@ -44,41 +46,20 @@
 </section>
 <section class="item-details">
 	<h2>Documents</h2>
-	{#if data.documents.length}
-		<ul class="document-list">
-			{#each data.documents as document (document.id)}
-				<li>
-					<a href={resolve('/(app)/documents/[id]', { id: document.id })}>{document.title}</a>
-					<p class="hint">
-						{document.originalName} · {document.contentType} · {(
-							document.size /
-							1024 /
-							1024
-						).toFixed(2)} MB
-					</p>
-				</li>
-			{/each}
-		</ul>
-	{:else}
-		<p class="hint">No Documents attached.</p>
-	{/if}
-	<details class="photo-controls">
-		<summary>Attach Document</summary>
-		<form method="POST" action="?/document" enctype="multipart/form-data">
-			<label for="document-title">Document title</label>
-			<input id="document-title" name="title" value={form?.title ?? ''} required />
-			<label for="document-upload">Document</label>
-			<input
-				id="document-upload"
-				name="document"
-				type="file"
-				accept="application/pdf,image/jpeg,image/png,image/heic,.heic"
-				required
-			/>
-			<p class="hint">PDF, JPEG, PNG, or HEIC. Up to 25 MB.</p>
-			<button class="primary" type="submit">Attach Document</button>
-		</form>
-	</details>
+	<h3 class="service-notes-heading">Item Documents</h3>
+	<DocumentList documents={data.documents} />
+	<DocumentUpload title={form?.title} />
+	{#each data.records.filter((record) => record.documents.length) as record (record.id)}
+		<section class="service-documents" aria-label="Service Record · {record.date}">
+			<h3>
+				<a href={resolve('/(app)/maintenance-log/[id]', { id: record.id })}
+					>Service Record · <time datetime={record.date}>{record.date}</time></a
+				>
+			</h3>
+			<p class="item-notes">{record.notes || 'No notes recorded.'}</p>
+			<DocumentList documents={record.documents} />
+		</section>
+	{/each}
 </section>
 <section class="item-details">
 	<h2>Item details</h2>

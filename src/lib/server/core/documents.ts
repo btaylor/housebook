@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { asc, eq } from 'drizzle-orm';
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
-import { documents, items, storedFiles } from '../schema';
+import { documents, items, serviceRecords, storedFiles } from '../schema';
 import { DomainError } from './errors';
 import type { Files } from './files';
 
@@ -17,15 +17,28 @@ export class Documents {
 		private files: Files
 	) {}
 
-	async addToItem(itemId: string, title: string, upload: File, authorize?: () => void) {
+	addToItem(itemId: string, title: string, upload: File, authorize?: () => void) {
+		return this.add({ itemId }, title, upload, authorize);
+	}
+
+	addToServiceRecord(serviceRecordId: string, title: string, upload: File, authorize?: () => void) {
+		return this.add({ serviceRecordId }, title, upload, authorize);
+	}
+
+	private async add(
+		owner: { itemId: string } | { serviceRecordId: string },
+		title: string,
+		upload: File,
+		authorize?: () => void
+	) {
 		const value = documentTitle(title);
-		this.requireItem(itemId);
+		this.requireOwner(owner);
 		return this.files.save(upload, false, (file) => {
 			authorize?.();
-			this.requireItem(itemId);
+			this.requireOwner(owner);
 			return this.database
 				.insert(documents)
-				.values({ id: randomUUID(), title: value, itemId, fileId: file.id })
+				.values({ id: randomUUID(), title: value, ...owner, fileId: file.id })
 				.returning()
 				.get();
 		});
@@ -83,6 +96,20 @@ export class Documents {
 	private requireItem(id: string) {
 		if (!this.database.select({ id: items.id }).from(items).where(eq(items.id, id)).get()) {
 			throw new DomainError('item-not-found', 'Item not found.');
+		}
+	}
+
+	private requireOwner(owner: { itemId: string } | { serviceRecordId: string }) {
+		if ('itemId' in owner) {
+			this.requireItem(owner.itemId);
+		} else if (
+			!this.database
+				.select({ id: serviceRecords.id })
+				.from(serviceRecords)
+				.where(eq(serviceRecords.id, owner.serviceRecordId))
+				.get()
+		) {
+			throw new DomainError('service-record-not-found', 'Service Record not found.');
 		}
 	}
 }

@@ -1,0 +1,1 @@
+CREATE INDEX `documents_service_record` ON `documents` (`serviceRecordId`);

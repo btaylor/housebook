@@ -143,7 +143,9 @@ Service Records show newest dates first. You can edit or permanently delete a Se
 Costs use a decimal point and at most two decimal places, and are stored as integer cents.
 Archived Contractors cannot be assigned to new Service Records, but stay on existing ones.
 Retired Items stay linked. An Item with Service Records cannot be deleted.
-Documents on Service Records are not yet available.
+Attach receipts and invoices to a Service Record with the same Document types and limits as
+Items. Each covered Item also shows those Documents, grouped by Service Record.
+Deleting a Service Record deletes its Documents and their stored files.
 
 ## Upgrade
 

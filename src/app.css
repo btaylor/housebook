@@ -707,6 +707,12 @@ textarea {
 .document-metadata {
 	overflow-wrap: anywhere;
 }
+.service-documents {
+	margin-top: 1.5rem;
+	border-top: 1px solid var(--line);
+	padding-top: 1.25rem;
+	overflow-wrap: anywhere;
+}
 .document-actions {
 	display: flex;
 	flex-wrap: wrap;

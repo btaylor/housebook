@@ -134,6 +134,7 @@ test('Service Record routes guard writes and report invalid performers and missi
 	for (const path of [
 		'/maintenance-log/new',
 		'/maintenance-log/missing/edit',
+		'/maintenance-log/missing?/document',
 		'/maintenance-log/missing?/delete'
 	]) {
 		const response = await request.post(path, {

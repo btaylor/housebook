@@ -182,3 +182,68 @@ test('upload and file routes require a session and reject cross-origin writes', 
 	expect(oversized.status()).toBe(400);
 	expect(await oversized.text()).toContain('Use a file of 25 MB or less.');
 });
+
+test('attaches receipts to a Service Record and opens them from a covered Item', async ({
+	page,
+	app
+}) => {
+	const headers = { origin: app.url, accept: 'text/html' };
+	await page.request.post('/setup', {
+		form: { ...setup, code: app.setupCode },
+		headers
+	});
+	const item = await page.request.post('/items/new', {
+		form: { name: 'Water heater', category: 'plumbing' },
+		headers
+	});
+	await page.goto(item.url());
+	await page.getByRole('link', { name: 'Log work', exact: true }).click();
+	await page.getByLabel('Date', { exact: false }).fill('2026-02-01');
+	await page.getByLabel('Done by').selectOption({ label: 'Morgan' });
+	await page.getByLabel('Notes').fill('Replaced the water heater valve.');
+	await page.getByRole('button', { name: 'Save Service Record' }).click();
+	await expect(page.getByRole('heading', { name: 'Service Record', exact: true })).toBeVisible();
+	const recordUrl = page.url();
+	for (const title of ['Valve receipt', 'Invoice copy']) {
+		await page.locator('summary').filter({ hasText: 'Attach Document' }).click();
+		await page.getByLabel('Document title', { exact: true }).fill(title);
+		await page
+			.getByLabel('Document', { exact: true })
+			.setInputFiles(resolve(fixtures, 'manual.pdf'));
+		await page.getByRole('button', { name: 'Attach Document', exact: true }).click();
+		await expect(page.getByRole('status')).toHaveText('Document attached.');
+		await expect(page.getByRole('link', { name: title, exact: true })).toBeVisible();
+	}
+	await page.getByRole('link', { name: 'Water heater', exact: true }).click();
+	const group = page.getByRole('region', { name: 'Service Record · 2026-02-01', exact: true });
+	await expect(group).toContainText('Replaced the water heater valve.');
+	await group.getByRole('link', { name: 'Valve receipt', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'Valve receipt', exact: true })).toBeVisible();
+	const documentUrl = page.url();
+	const fileUrl = await page.getByRole('link', { name: 'Open Document' }).getAttribute('href');
+	const response = await page.request.get(fileUrl!);
+	expect(response.status()).toBe(200);
+	expect(response.headers()['content-type']).toBe('application/pdf');
+	expect(response.headers()['content-disposition']).toMatch(/^inline;/);
+	expect(await response.body()).toEqual(readFileSync(resolve(fixtures, 'manual.pdf')));
+	await page.getByLabel('Document title', { exact: true }).fill('Paid valve receipt');
+	await page.getByRole('button', { name: 'Rename Document' }).click();
+	await expect(
+		page.getByRole('heading', { name: 'Paid valve receipt', exact: true })
+	).toBeVisible();
+	await page.getByRole('link', { name: '← Service Record', exact: true }).click();
+	await expect(page).toHaveURL(recordUrl);
+	await page.getByRole('link', { name: 'Invoice copy', exact: true }).click();
+	await page.getByLabel('Type DELETE to delete this Document permanently').fill('DELETE');
+	await page.getByRole('button', { name: 'Delete Document', exact: true }).click();
+	await expect(page).toHaveURL(recordUrl);
+	await expect(page.getByRole('link', { name: 'Invoice copy', exact: true })).toHaveCount(0);
+	await expect(page.getByRole('link', { name: 'Paid valve receipt', exact: true })).toBeVisible();
+	await page.getByText('Delete Service Record', { exact: true }).click();
+	await page.getByRole('button', { name: 'Confirm deletion' }).click();
+	await expect(page).toHaveURL(/\/maintenance-log$/);
+	await page.goto(item.url());
+	await expect(page.getByRole('link', { name: 'Paid valve receipt', exact: true })).toHaveCount(0);
+	expect((await page.request.get(documentUrl)).status()).toBe(404);
+	expect((await page.request.get(fileUrl!)).status()).toBe(404);
+});
