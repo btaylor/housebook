@@ -393,6 +393,10 @@ input::placeholder {
 .contractor-list a > div {
 	min-width: 0;
 }
+.contractor-list .coming-soon {
+	flex-shrink: 0;
+	white-space: nowrap;
+}
 .contractor-list p {
 	color: var(--muted);
 	font-size: 0.9rem;
