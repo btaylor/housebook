@@ -140,12 +140,36 @@
 <section class="settings-card" aria-labelledby="members-heading">
 	<h2 id="members-heading">Members</h2>
 	<p class="hint">Everyone in the Household has the same access.</p>
+	{#if form?.section === 'members' && form.message}
+		<p class="form-error" role="alert">{form.message}</p>
+	{/if}
+	{#if form?.reset}
+		<div class="invite-link">
+			<label for="reset-link">Password reset link for {form.reset.memberName}</label>
+			<input id="reset-link" readonly value={form.reset.url} />
+			<p class="hint">
+				Copy this link and share it privately. It works once and expires in 24 hours. Save it now;
+				it is not stored. No email is sent.
+			</p>
+		</div>
+	{/if}
 	<ul class="household-list" aria-label="Members">
 		{#each data.members as member (member.id)}
 			<li>
 				<h3>{member.name}{member.id === data.member.id ? ' (you)' : ''}</h3>
 				<p>{member.email}</p>
 				<p class="hint">Email not verified.</p>
+				{#if member.id !== data.member.id}
+					<form method="POST" action="?/createPasswordReset#members-heading">
+						<input type="hidden" name="memberId" value={member.id} />
+						<button
+							class="secondary"
+							type="submit"
+							aria-label={`Create password reset link for ${member.name}`}
+							>Create password reset link</button
+						>
+					</form>
+				{/if}
 			</li>
 		{/each}
 	</ul>

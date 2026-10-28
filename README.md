@@ -81,6 +81,37 @@ The invited person opens the link and enters their name, a unique email address
 Set `HOUSEBOOK_URL=https://housebook.example` to use your public address in Invite links.
 Without it, Housebook uses the incoming request's origin.
 
+## Password recovery
+
+In Settings, find the Member who needs access and choose **Create password reset link**.
+Copy the displayed link and share it privately. No email is sent. Reset links work once and
+expire after 24 hours. Setting a new password signs out all that Member's devices and clears
+their sign-in lockout. The Member must sign in again with the new password.
+
+If you are the only Member, or no Member can sign in, run the installer command:
+
+```sh
+docker exec housebook node server.js reset-password morgan@example.com
+```
+
+With Compose, use `docker compose exec housebook node server.js reset-password morgan@example.com`.
+The same app entry point serves Housebook by default and runs the reset command without a server.
+The command matches the Member's email without regard to case and prints a reset link.
+An unknown email prints an error and exits unsuccessfully. Treat the printed link like a password.
+Only its hash is stored; save it when it is printed.
+
+Both Invite and reset links use `HOUSEBOOK_URL` when set. Member-created links otherwise use
+the incoming request's origin. The command has no incoming request and defaults to
+`http://localhost:3000`; replace that origin with your Housebook address before sharing,
+or provide the public address for the command:
+
+```sh
+docker exec -e HOUSEBOOK_URL=http://housebook.lan:3000 housebook node server.js reset-password morgan@example.com
+```
+
+For local development, build first, then run `node server.js reset-password morgan@example.com`
+with the same `HOUSEBOOK_DATA_DIR` as the app.
+
 ## Items
 
 Add an Item with a name and category. Location, make, model, serial number, install date,
