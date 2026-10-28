@@ -15,6 +15,15 @@ async function createHarness(...args: Parameters<typeof createHousebookHarness>)
 	return harness;
 }
 
+function nextMigrationName(harness: Harness, name: string) {
+	const latest = readMigrationFiles({ migrationsFolder: harness.migrationsDirectory }).at(-1)!;
+	const timestamp = new Date(latest.folderMillis + 1000)
+		.toISOString()
+		.replace(/\D/g, '')
+		.slice(0, 14);
+	return `${timestamp}_${name}`;
+}
+
 function backups(harness: Harness) {
 	return readdirSync(harness.dataDirectory).filter(
 		(name) => name.includes('.pre-migration-') && name.endsWith('.sqlite')
@@ -53,12 +62,12 @@ describe('Housebook construction', () => {
 
 describe('startup migrations', () => {
 	test('backs up committed WAL contents before upgrading an existing database', async () => {
-		const harness = await createHarness([
-			{
-				name: '20261028000000_previous',
-				sql: 'CREATE TABLE fixture (value TEXT NOT NULL);'
-			}
-		]);
+		const harness = await createHarness([], { autoStart: false });
+		harness.addMigration({
+			name: nextMigrationName(harness, 'previous'),
+			sql: 'CREATE TABLE fixture (value TEXT NOT NULL);'
+		});
+		await harness.start();
 		const previousMigrations = harness.core.database.all(
 			sql`SELECT hash, created_at, name FROM "__drizzle_migrations" ORDER BY id`
 		);
@@ -70,7 +79,7 @@ describe('startup migrations', () => {
 			writer.prepare('INSERT INTO fixture VALUES (?)').run('keep this committed WAL row');
 			expect(statSync(join(harness.dataDirectory, 'housebook.sqlite-wal')).size).toBeGreaterThan(0);
 			harness.addMigration({
-				name: '20261029000000_upgrade',
+				name: nextMigrationName(harness, 'upgrade'),
 				sql: 'ALTER TABLE fixture ADD COLUMN upgraded INTEGER NOT NULL DEFAULT 1;'
 			});
 			harness.setTime('2026-10-29T12:34:56.000Z');
@@ -144,7 +153,7 @@ describe('startup migrations', () => {
 			sql`SELECT hash, created_at, name FROM "__drizzle_migrations" ORDER BY id`
 		);
 		harness.addMigration({
-			name: '20261028000000_broken',
+			name: nextMigrationName(harness, 'broken'),
 			sql: 'CREATE TABLE partial (value TEXT); --> statement-breakpoint\nINVALID SQL;'
 		});
 		await expect(harness.start()).rejects.toThrow(/database migration failed/);

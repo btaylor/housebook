@@ -170,7 +170,8 @@ describe('Member sign-in and sessions', () => {
 				memberId: session.member.id,
 				createdAt: harness.core.clock().getTime(),
 				lastSeenAt: harness.core.clock().getTime(),
-				expiresAt: harness.core.clock().getTime() + 30 * day
+				expiresAt: harness.core.clock().getTime() + 30 * day,
+				deviceHint: 'Unknown browser · Unknown device'
 			}
 		]);
 		expect(harness.core.auth.validateSession('unknown')).toBeNull();

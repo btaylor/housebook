@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const houses = sqliteTable(
 	'houses',
@@ -19,6 +19,7 @@ export const members = sqliteTable(
 		name: text().notNull(),
 		email: text().notNull(),
 		passwordHash: text().notNull(),
+		signInLockedUntil: integer({ mode: 'timestamp_ms' }),
 		createdAt: integer({ mode: 'timestamp_ms' }).notNull()
 	},
 	(table) => [uniqueIndex('members_email_unique').on(sql`lower(${table.email})`)]
@@ -31,8 +32,21 @@ export const sessions = sqliteTable('sessions', {
 		.references(() => members.id, { onDelete: 'cascade' }),
 	createdAt: integer({ mode: 'timestamp_ms' }).notNull(),
 	lastSeenAt: integer({ mode: 'timestamp_ms' }).notNull(),
-	expiresAt: integer({ mode: 'timestamp_ms' }).notNull()
+	expiresAt: integer({ mode: 'timestamp_ms' }).notNull(),
+	deviceHint: text().notNull().default('Unknown browser · Unknown device')
 });
+
+export const signInAttempts = sqliteTable(
+	'sign_in_attempts',
+	{
+		id: integer().primaryKey(),
+		memberId: text()
+			.notNull()
+			.references(() => members.id, { onDelete: 'cascade' }),
+		attemptedAt: integer({ mode: 'timestamp_ms' }).notNull()
+	},
+	(table) => [index('sign_in_attempts_member_time').on(table.memberId, table.attemptedAt)]
+);
 
 export const contractors = sqliteTable('contractors', {
 	id: text().primaryKey(),

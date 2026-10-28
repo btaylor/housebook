@@ -52,7 +52,10 @@ name, email, and password. Passwords need at least 12 characters with no composi
 The setup code stops working once the House exists. Restarting before setup prints a new code.
 
 Sign in with email and password. Email matching ignores case. Sessions last 30 days from
-the last visit. Settings lets you sign out of the current device only.
+the last visit. Five failed sign-ins within 15 minutes lock that Member's sign-in for 15 minutes.
+Settings lets you edit your name and email, change your password with your current password,
+review your active sessions, and sign out of this device or all your devices. You can also rename
+the House. Email addresses must be unique across Members, ignoring case, and remain unverified.
 Housebook does not send email, verify addresses, or make outgoing runtime requests.
 
 Plain HTTP works directly on a LAN. HTTPS is recommended. Behind an HTTPS reverse proxy,

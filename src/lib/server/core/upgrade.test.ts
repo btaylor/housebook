@@ -1,4 +1,5 @@
 import { cpSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { sql } from 'drizzle-orm';
@@ -7,12 +8,13 @@ import { drizzle } from 'drizzle-orm/node-sqlite';
 import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 import { expect, test } from 'vitest';
 import { createHousebookHarness } from '../testing/harness';
+import { hashPassword } from './passwords';
 
 function quoteIdentifier(name: string) {
 	return `"${name.replaceAll('"', '""')}"`;
 }
 
-function seedAndSnapshotPreviousData(database: DatabaseSync) {
+async function seedAndSnapshotPreviousData(database: DatabaseSync) {
 	const tables = database
 		.prepare(
 			`SELECT name FROM sqlite_master WHERE type = 'table'
@@ -25,13 +27,38 @@ function seedAndSnapshotPreviousData(database: DatabaseSync) {
 		database.exec('CREATE TABLE upgrade_fixture (value TEXT NOT NULL);');
 		database.prepare('INSERT INTO upgrade_fixture VALUES (?)').run('keep this existing row');
 		tables.push('upgrade_fixture');
-	} else if (tables.join(',') === 'houses,members,sessions') {
+	} else if (tables.join(',') === 'contractors,houses,members,sessions') {
+		const now = Date.parse('2026-01-01T00:00:00Z');
+		database
+			.prepare('INSERT INTO houses (name, currency, createdAt) VALUES (?, ?, ?)')
+			.run('Existing House', 'USD', now);
+		database
+			.prepare(
+				'INSERT INTO members (id, name, email, passwordHash, createdAt) VALUES (?, ?, ?, ?, ?)'
+			)
+			.run(
+				'existing-member',
+				'Morgan',
+				'morgan@example.com',
+				await hashPassword('an existing password'),
+				now
+			);
+		database
+			.prepare(
+				'INSERT INTO sessions (tokenHash, memberId, createdAt, lastSeenAt, expiresAt) VALUES (?, ?, ?, ?, ?)'
+			)
+			.run(
+				createHash('sha256').update('existing-session-token').digest('hex'),
+				'existing-member',
+				now,
+				now,
+				Date.parse('2030-01-01T00:00:00Z')
+			);
 		database.exec(`
-			INSERT INTO houses (name, currency, createdAt) VALUES ('Willow House', 'USD', 1760000000000);
-			INSERT INTO members (id, name, email, passwordHash, createdAt)
-				VALUES ('morgan', 'Morgan', 'morgan@example.com', 'stored-password-hash', 1760000000000);
-			INSERT INTO sessions (tokenHash, memberId, createdAt, lastSeenAt, expiresAt)
-				VALUES ('stored-token-hash', 'morgan', 1760000000000, 1760000000000, 1762592000000);
+			INSERT INTO contractors (id, name, phone, email, trade, notes, archivedAt)
+				VALUES ('active-contractor', 'Willow Plumbing', '5551234567',
+					'contact@example.com', 'Plumbing', 'Boiler service', NULL),
+					('archived-contractor', 'Cedar Roofing', '', '', 'Roofing', 'Old roof', 1760000000000);
 		`);
 	} else {
 		throw new Error(`Add representative previous-version fixtures for: ${tables.join(', ')}`);
@@ -58,12 +85,12 @@ test('preserves existing data and a pre-migration backup when upgrading the pack
 		rmSync(join(harness.migrationsDirectory, latest.name), { recursive: true });
 		mkdirSync(harness.dataDirectory);
 		const database = new DatabaseSync(join(harness.dataDirectory, 'housebook.sqlite'));
-		let previousData: ReturnType<typeof seedAndSnapshotPreviousData>;
+		let previousData: Awaited<ReturnType<typeof seedAndSnapshotPreviousData>>;
 		try {
 			migrate(drizzle({ client: database }), {
 				migrationsFolder: harness.migrationsDirectory
 			});
-			previousData = seedAndSnapshotPreviousData(database);
+			previousData = await seedAndSnapshotPreviousData(database);
 			expect(database.prepare('SELECT count(*) AS count FROM __drizzle_migrations').get()).toEqual({
 				count: migrations.length - 1
 			});
@@ -81,6 +108,16 @@ test('preserves existing data and a pre-migration backup when upgrading the pack
 		expect(
 			harness.core.database.get(sql`SELECT count(*) AS count FROM __drizzle_migrations`)
 		).toEqual({ count: migrations.length });
+		expect(harness.core.auth.listSessions('existing-session-token')).toEqual([
+			{
+				deviceHint: 'Unknown browser · Unknown device',
+				lastSeenAt: harness.core.clock(),
+				current: true
+			}
+		]);
+		await expect(
+			harness.core.auth.signIn('morgan@example.com', 'an existing password')
+		).resolves.toHaveProperty('member.id', 'existing-member');
 
 		const backups = readdirSync(harness.dataDirectory).filter(
 			(name) => name.startsWith('housebook.pre-migration-') && name.endsWith('.sqlite')

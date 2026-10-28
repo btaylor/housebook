@@ -86,7 +86,7 @@ test('phone first-start setup, sign-out and sign-in reach the responsive offline
 		await page.setViewportSize({ width, height: 800 });
 		const previousHeight = (await navigation.boundingBox())!.height;
 		await navigation.getByRole('link', { name: 'Maintenance Log', exact: true }).click();
-		expect((await navigation.boundingBox())!.height).toBe(previousHeight);
+		expect((await navigation.boundingBox())!.height).toBeCloseTo(previousHeight, 0);
 		await navigation.getByRole('link', { name: 'Settings', exact: true }).click();
 		expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
 			width

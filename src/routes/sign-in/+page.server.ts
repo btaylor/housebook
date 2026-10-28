@@ -10,7 +10,8 @@ export const actions: Actions = {
 		try {
 			const session = await event.locals.housebook.auth.signIn(
 				email,
-				String(form.get('password') ?? '')
+				String(form.get('password') ?? ''),
+				event.request.headers.get('user-agent') ?? ''
 			);
 			setSessionCookie(event, session);
 		} catch (error) {
